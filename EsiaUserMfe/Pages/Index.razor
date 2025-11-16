@@ -1,0 +1,29 @@
+@using Microsoft.AspNetCore.Components.Web
+
+@page "/"
+
+<h3>Пример вызова API</h3>
+
+<button @onclick="LoadData">Загрузить</button>
+
+@if (data is null)
+{
+    <p>Нет данных</p>
+}
+else
+{
+    <pre>@data</pre>
+}
+
+@code {
+    string? data;
+
+    // Метод должен быть внутри @code
+    async void LoadData()
+    {
+        data = await Http.GetStringAsync("api/users");
+    }
+
+    [Inject]
+    public HttpClient Http { get; set; } = default!;
+}
