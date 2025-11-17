@@ -4,8 +4,12 @@
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
+
+        
         <UseBlazorWebAssembly>true</UseBlazorWebAssembly>
         <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
+        <BlazorWebAssemblyEnableDebugging>true</BlazorWebAssemblyEnableDebugging>
+    
     </PropertyGroup>
 
     <ItemGroup>

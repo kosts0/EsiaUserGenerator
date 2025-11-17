@@ -19,7 +19,7 @@ else
     string? data;
 
     // Метод должен быть внутри @code
-    async void LoadData()
+    async Task LoadData()
     {
         data = await Http.GetStringAsync("api/users");
     }
