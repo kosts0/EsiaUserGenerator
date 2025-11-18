@@ -5,5 +5,5 @@ namespace EsiaUserGenerator.Service.Interface;
 
 public interface IEsiaRegistrationService
 {
-    Task<CreateUserResult> CreateUserAsync(CreateUserRequest esiaUserInfo, CancellationToken ct);
+    Task<CreateUserResult> CreateUserAsync(CreateUserData esiaUserInfo, CancellationToken ct);
 }

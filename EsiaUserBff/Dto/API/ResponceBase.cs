@@ -1,9 +1,9 @@
 namespace EsiaUserGenerator.Dto;
 
-public class ResponceBase<TResponseData>
+public abstract class ResponceBase<TResponseData>
 {
     public int? Code { get; set; }
-    public int? StatusCode { get; set; }
+    public string? CodeStatus { get; set; }
     public TResponseData Data { get; set; }
     public Exception? Exception { get; set; }
     

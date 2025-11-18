@@ -4,7 +4,7 @@ public class CreateUserResult : ResponceBase<CreateUserResponseData>
 {
 }
 
-public record CreateUserResponseData
+public class CreateUserResponseData
 {
     public Guid? UserId { get; set; }
 }

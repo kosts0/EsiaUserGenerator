@@ -15,7 +15,7 @@ public class EsiaRegistrationService : IEsiaRegistrationService
     }
     private readonly HttpClient _http;
     private readonly ILogger<EsiaRegistrationService> _logger;
-    public Task<CreateUserResult> CreateUserAsync(CreateUserRequest esiaUserInfo, CancellationToken ct)
+    public async Task<CreateUserResult> CreateUserAsync(CreateUserData esiaUserInfo, CancellationToken ct)
     {
         var activity = Activity.Current;
         if (activity != null)
@@ -30,24 +30,41 @@ public class EsiaRegistrationService : IEsiaRegistrationService
             _logger.LogWarning("Activity.Current is null — tracing not available.");
         }
 
-
+        CreateUserResult result = new CreateUserResult()
+        {
+        };
         
+        await PostInitDataAsync(esiaUserInfo, ct);
 
-        _logger.LogInformation("User created successfully with UserId={UserId}", result.UserId);
 
-        return Task.FromResult(result);
+
+        result.Data = new()
+        {
+            UserId = Guid.NewGuid()
+        };
+        result.CodeStatus = "Created";
+        
+        _logger.LogInformation("User created successfully with UserId={UserId}", result.Data.UserId);
+
+        return result;
     }
 
-    private async Task PostInitDataAsync(CreateUserRequest esiaUserInfo, CancellationToken ct)
+    
+
+    private async Task PostInitDataAsync(CreateUserData esiaUserInfo, CancellationToken ct)
     {
-        var result =  await _http.PostAsJsonAsync<PostInitData>(new Uri("/registration_api/registration/v1/user-data"),
+        var result =  await _http.PostAsJsonAsync<PostInitData>(new Uri(_http.BaseAddress + "registration_api/registration/v1/user-data"),
 
             new PostInitData()
             {
-                FirstName = esiaUserInfo.EsiaUserInfo.FirstName,
-                LastName = esiaUserInfo.EsiaUserInfo.LastName,
-                Phone = esiaUserInfo.EsiaAuthInfo.Phone.ToPhoneValue()
+                FirstName = esiaUserInfo?.EsiaUserInfo?.FirstName,
+                LastName = esiaUserInfo?.EsiaUserInfo?.LastName,
+                Phone = esiaUserInfo?.EsiaAuthInfo?.Phone
             }, ct);
+        if (!result.IsSuccessStatusCode)
+        {
+            throw new Exception(result.ToString());
+        }
         return;
     }
 }
