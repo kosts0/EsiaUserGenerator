@@ -21,11 +21,19 @@ public sealed class UsersController : ControllerBase
     {
         req.Data ??= new CreateUserData();
         req.Data.GenarateDefaultValues();
-        var result = await _esia.CreateUserAsync(req.Data, ct);
-
-        if (result.CodeStatus != "Created")
-            return BadRequest(result);
-
-        return Ok(result);
+        try
+        {
+            var result = await _esia.CreateUserAsync(req.Data, ct);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new CreateUserResult()
+            {
+                CodeStatus = "Internal error",
+                Code = 500,
+                Exception = ex.Message
+            });
+        }
     }
 }

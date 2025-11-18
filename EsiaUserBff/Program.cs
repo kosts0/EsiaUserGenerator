@@ -10,10 +10,12 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 builder.Services.AddTransient<LoggingHandler>();
-builder.Services.AddHttpClient<IEsiaRegistrationService, EsiaRegistrationService>(client =>
+builder.Services.AddHttpClient();
+/*builder.Services.AddHttpClient<IEsiaRegistrationService, EsiaRegistrationService>(client =>
 {
     client.BaseAddress = new Uri("https://esia-portal1.test.gosuslugi.ru");
-}).AddHttpMessageHandler<LoggingHandler>();
+}).AddHttpMessageHandler<LoggingHandler>();*/
+builder.Services.AddTransient<IEsiaRegistrationService, EsiaRegistrationService>();
 
 var app = builder.Build();
 

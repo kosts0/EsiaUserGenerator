@@ -12,6 +12,7 @@ public static class DefaultValuesGeneratior
         data.EsiaUserInfo ??= new EsiaUserInfo();
         data.EsiaUserInfo.FirstName = _faker.Person.FirstName;
         data.EsiaUserInfo.LastName = _faker.Person.LastName;
+        data.EsiaAuthInfo.Password ??= "Test123456!";
         return data;
     }
 
