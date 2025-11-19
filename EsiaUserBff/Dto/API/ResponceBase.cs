@@ -1,4 +1,4 @@
-namespace EsiaUserGenerator.Dto;
+namespace EsiaUserGenerator.Dto.API;
 
 public abstract class ResponceBase<TResponseData>
 {

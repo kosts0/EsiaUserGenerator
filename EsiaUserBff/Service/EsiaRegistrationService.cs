@@ -3,20 +3,26 @@ using System.Text.RegularExpressions;
 using EsiaUserGenerator.Dto;
 using EsiaUserGenerator.Dto.Model;
 using EsiaUserGenerator.Dto.Request;
+using EsiaUserGenerator.Exception;
 using EsiaUserGenerator.Logs;
 using EsiaUserGenerator.Service.Interface;
 using EsiaUserGenerator.Utils;
 using Newtonsoft.Json.Linq;
+using System;
 
 namespace EsiaUserGenerator.Service;
 
 public class EsiaRegistrationService : IEsiaRegistrationService
 {
-    public EsiaRegistrationService(ILogger<EsiaRegistrationService> logger, LoggingHandler loggingHandler)
+    private IRequestStatusStore _requestStatusStore;
+    private ILoggerFactory _loggerFactory;
+    public EsiaRegistrationService(ILogger<EsiaRegistrationService> logger,  ILoggerFactory loggerFactory, IRequestStatusStore requestStatusStore)
     { 
         _logger = logger;
-        _loggingHandler = loggingHandler;
+        var loggerHandlerLogger = loggerFactory.CreateLogger<LoggingHandler>();
+        _loggingHandler = new LoggingHandler(loggerHandlerLogger);
         _http = CreateClient();
+        _requestStatusStore = requestStatusStore;
     }
     private HttpClient CreateClient()
     {
@@ -37,6 +43,7 @@ public class EsiaRegistrationService : IEsiaRegistrationService
     private readonly ILogger<EsiaRegistrationService> _logger;
     public async Task<CreateUserResult> CreateUserAsync(CreateUserData esiaUserInfo, CancellationToken ct)
     {
+        var requestId = esiaUserInfo.RequestId?.ToString() ?? Guid.NewGuid().ToString() ;
         var activity = Activity.Current;
         if (activity != null)
         {
@@ -49,22 +56,51 @@ public class EsiaRegistrationService : IEsiaRegistrationService
         {
             _logger.LogWarning("Activity.Current is null — tracing not available.");
         }
-        
+        _logger.LogInformation("RequestId user creation: {requestId}", requestId);
         CreateUserResult result = new CreateUserResult()
         {
         };
-        
+        await _requestStatusStore.SetStatusAsync(requestId, nameof(PostInitDataAsync));
         await PostInitDataAsync(esiaUserInfo, ct);
-
+        
+        await _requestStatusStore.SetStatusAsync(requestId, $"Waiting sms. Phone: {esiaUserInfo.EsiaAuthInfo.Phone}");
         var sms = await RetryAsync.WhileNull(() => GetAuthSms(esiaUserInfo.EsiaAuthInfo.Phone),
             retries: 30, interval: TimeSpan.FromSeconds(5));
-        await SetCode(sms.Value);
-        await CreatePassword(esiaUserInfo, ct);
-        var oauth = await GetOauthEndpoint();
-        await ExecuteRequest(() => _http.GetAsync(new Uri(oauth), ct));
-        var loginUrl = await Login(esiaUserInfo.EsiaAuthInfo, ct);
-        await ExecuteRequest(() => _http.GetAsync(new Uri(loginUrl), ct));
         
+        await _requestStatusStore.SetStatusAsync(requestId, $"Confirm SMS");
+        await SetCode(sms);
+
+        await _requestStatusStore.SetStatusAsync(requestId, $"Set password");
+        await CreatePassword(esiaUserInfo, ct);
+
+        
+        await _requestStatusStore.SetStatusAsync(requestId, "Oauth redirect ot authorization");
+        var oauth = await GetOauthEndpoint();
+        
+        
+        await GoToOauth(oauth);
+        var loginUrl = await Login(esiaUserInfo.EsiaAuthInfo, ct);
+
+        await _requestStatusStore.SetStatusAsync(requestId, "Authorization");
+        await ExecuteRequest(() => _http.GetAsync(new Uri(loginUrl), ct));
+
+        await _requestStatusStore.SetStatusAsync(requestId, "Update person data");
+        await UpdatePersonData(esiaUserInfo.EsiaUserInfo, ct);
+
+        await _requestStatusStore.SetStatusAsync(requestId, nameof(SetPostmailConfirmation));
+        await SetPostmailConfirmation(ct);
+
+        await _requestStatusStore.SetStatusAsync(requestId, "Wait postman code");
+        await GetPostCodes(ct);
+        
+        var postalCode = await RetryAsync.WhileNull(() =>
+        {
+            _logger.LogInformation($"Waiting for postal code for snils {esiaUserInfo.EsiaUserInfo.Snils}");
+            return GetPostCode(esiaUserInfo.EsiaUserInfo.Snils, ct);
+        }, retries: 30, interval: TimeSpan.FromSeconds(5));
+
+        await _requestStatusStore.SetStatusAsync(requestId, "Confirm postmail code");
+        await ConfirmPostal(postalCode, ct);
         result.Data = new()
         {
             UserId = Guid.NewGuid()
@@ -78,21 +114,17 @@ public class EsiaRegistrationService : IEsiaRegistrationService
     
     private async Task PostInitDataAsync(CreateUserData esiaUserInfo, CancellationToken ct)
     {
-        var result =  await _http.PostAsJsonAsync<PostInitData>("registration_api/registration/v1/user-data",
+        await ExecuteRequest(() =>  _http.PostAsJsonAsync<PostInitData>("registration_api/registration/v1/user-data",
             new PostInitData()
             {
                 FirstName = esiaUserInfo?.EsiaUserInfo?.FirstName,
                 LastName = esiaUserInfo?.EsiaUserInfo?.LastName,
                 Phone = esiaUserInfo?.EsiaAuthInfo?.Phone
-            }, ct);
-        if (!result.IsSuccessStatusCode)
-        {
-            throw new Exception(result.ToString());
-        }
+            }, ct));
         return;
     }
 
-    private async Task<long?> GetAuthSms(string phone)
+    private async Task<string?> GetAuthSms(string phone)
     {
         var smsList = await _http.GetAsync("/logs/sms/");
         var smsListContent = await smsList.Content.ReadAsStringAsync();
@@ -103,7 +135,7 @@ public class EsiaRegistrationService : IEsiaRegistrationService
         {
             string code = match.Groups[1].Value;
             _logger.LogInformation($"Код для {phone}: {code}");
-            return long.Parse(code);
+            return code;
         }
 
         return null;
@@ -115,11 +147,13 @@ public class EsiaRegistrationService : IEsiaRegistrationService
         var content =  await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode)
         {
-            throw new Exception($"Error during execute request:\n {content}");
+            throw new EsiaRequestException($@"Error during execute request {response?.RequestMessage?.RequestUri};
+Response: {content};
+Status: {response.StatusCode}");
         }
     }
     
-    public async Task SetCode(long code)
+    public async Task SetCode(string code)
     {
         await ExecuteRequest(() => _http.PostAsJsonAsync<SetCodeRequest>("/registration_api/activation/phone/verify-code", new SetCodeRequest()
         {
@@ -128,15 +162,10 @@ public class EsiaRegistrationService : IEsiaRegistrationService
     }
     private async Task CreatePassword(CreateUserData esiaUserInfo, CancellationToken ct)
     {
-        var response = await _http.PostAsJsonAsync("/registration_api/complete", new SetPassword()
+        await ExecuteRequest(() => _http.PostAsJsonAsync("/registration_api/complete", new SetPassword()
         {
             Password = esiaUserInfo?.EsiaAuthInfo?.Password
-        }, ct);
-        var content =  await response.Content.ReadAsStringAsync(ct);
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new Exception($"Error during create password:\n {content}");
-        }
+        }, ct));
     }
 
     private async Task<string> GetOauthEndpoint()
@@ -147,7 +176,7 @@ public class EsiaRegistrationService : IEsiaRegistrationService
             requestMessage.Headers.Add("Referer", _http.BaseAddress + "/profile/user/personal");
            var responseMessage = await _http.SendAsync(requestMessage);
            var locationHeader = responseMessage.Headers.Location;
-           if (locationHeader == null) throw new Exception("Error during get oauth url");
+           if (locationHeader == null) throw new System.Exception("Error during get oauth url");
            _logger.LogInformation("Response from location: {Location}", locationHeader);
            return locationHeader.ToString();
         }
@@ -158,13 +187,84 @@ public class EsiaRegistrationService : IEsiaRegistrationService
     {
         var resonse = await _http.PostAsJsonAsync<AuthorizationRequest>("/aas/oauth2/api/login", new AuthorizationRequest()
         {
-            Login = authInfo.Phone,
+            Login = authInfo.Phone.Replace("(", "").Replace(")", ""),
             Password = authInfo.Password
         });
-        if (!resonse.IsSuccessStatusCode) throw new Exception("Error during authorization");
+        if (!resonse.IsSuccessStatusCode) throw new EsiaRequestException("Error during authorization");
         var resposeContent = await resonse.Content.ReadAsStringAsync(ct);
-        string? redirectUri = JToken.Parse(resposeContent)?.SelectToken("$..redirect_uri")?.ToString();
-        if (string.IsNullOrEmpty(redirectUri)) throw new Exception("Error during get authorization redirect_uri");
+        string? redirectUri = JToken.Parse(resposeContent)?.SelectToken("$..redirect_url")?.ToString();
+        if (string.IsNullOrEmpty(redirectUri)) throw new EsiaRequestException("Error during get authorization redirect_uri");
+        _logger.LogInformation("Redirect url after login request: {RedirectUri}", redirectUri);
         return redirectUri;
+    }
+
+    private async Task UpdatePersonData(EsiaUserInfo  esiaUserInfo, CancellationToken ct)
+    {
+        await ExecuteRequest(() => _http.PostAsJsonAsync<EsiaUserInfo>("/profile/rs/prns/up", esiaUserInfo, ct));
+        return;
+    }
+
+    private async Task SetPostmailConfirmation(CancellationToken ct)
+    {
+        var requestBody = new
+        {
+            type = "PLV",
+            countryId = "RUS",
+            zipCode = 644123,
+            fiasCode = "",
+            region = "м",
+            district = "москва",
+            settlement = "москва",
+            house = "1",
+            flat = "1",
+            addressStr = "м регион, москва доп. территория, москва доп. улица"
+        };
+        await ExecuteRequest(() => _http.PostAsJsonAsync("/profile/rs/prns/usrcfm/addr", requestBody, ct));
+    }
+
+    private async Task<string> GetPostCodes(CancellationToken ct)
+    {
+        var responce = await _http.GetAsync("/logs/postcodes/", ct);
+        var responceCntent = await responce.Content.ReadAsStringAsync(ct);
+        return responceCntent;
+    }
+
+    private async Task<string?> GetPostCode(string inn, CancellationToken ct)
+    {
+        var postCodes = await GetPostCodes(ct);
+        string pattern = @$"Post code \({inn}\)\s*: (\d+)";
+        Match match = Regex.Match(postCodes, pattern);
+
+        if (match.Success)
+        {
+            string code = match.Groups[1].Value;
+            _logger.LogInformation($"Код для {inn}: {code}");
+            return code;
+        }
+
+        return null;
+    }
+    private async Task ConfirmPostal(string code, CancellationToken ct)
+    {
+        await ExecuteRequest(() => _http.GetAsync($"/profile/rs/prns/usrcfm/by-post?cfmPostCode={code}", ct));
+    }
+
+    private async Task GoToOauth(string oauth)
+    {
+        _logger.LogInformation("Go to oauth url: {OauthUrl}", oauth);
+
+        var response =await _http.GetAsync(oauth);
+        while (response.Headers.Location != null)
+        {
+            _logger.LogInformation("Go to redirect url: {OauthUrl}", response.Headers.Location);
+            response =await _http.GetAsync(response.Headers.Location);
+            var redirectHeader = response.Headers.Location;
+            if (redirectHeader != null && redirectHeader.ToString().Contains("/user/personal"))
+            {
+                _logger.LogInformation("Finish redirect chain before {redirectHeader}", redirectHeader);
+                break;
+            }
+            _logger.LogDebug("Headers after redirect : {headers}", response.Headers);
+        }
     }
 }

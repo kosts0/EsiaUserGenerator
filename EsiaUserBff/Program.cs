@@ -2,6 +2,8 @@
 using EsiaUserGenerator.Logs;
 using EsiaUserGenerator.Service;
 using EsiaUserGenerator.Service.Interface;
+using StackExchange.Redis;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -9,14 +11,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
-builder.Services.AddTransient<LoggingHandler>();
 builder.Services.AddHttpClient();
-/*builder.Services.AddHttpClient<IEsiaRegistrationService, EsiaRegistrationService>(client =>
-{
-    client.BaseAddress = new Uri("https://esia-portal1.test.gosuslugi.ru");
-}).AddHttpMessageHandler<LoggingHandler>();*/
+builder.Services.AddTransient<LoggingHandler>();
 builder.Services.AddTransient<IEsiaRegistrationService, EsiaRegistrationService>();
 
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+    ConnectionMultiplexer.Connect("localhost:6379")
+);
+builder.Services.AddSingleton<IRequestStatusStore, RedisRequestStatusStore>();
+builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
+builder.Services.AddHostedService<Worker>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

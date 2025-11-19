@@ -1,3 +1,5 @@
+using EsiaUserGenerator.Dto.API;
+
 namespace EsiaUserGenerator.Dto;
 
 public class CreateUserResult : ResponceBase<CreateUserResponseData>

@@ -3,9 +3,9 @@ namespace EsiaUserGenerator.Utils;
 public static class RetryAsync
 {
     public static async Task<bool> WhileFalse(Func<Task<bool>> action, 
-        int retries = 3, TimeSpan? interval = null, bool throwOnMaxRetryCount = true, Exception? maxRetryCountException = null)
+        int retries = 3, TimeSpan? interval = null, bool throwOnMaxRetryCount = true, System.Exception? maxRetryCountException = null)
     {
-        maxRetryCountException ??= new Exception("Превышено количество попыток Retry");
+        maxRetryCountException ??= new System.Exception("Превышено количество попыток Retry");
         interval ??= TimeSpan.FromSeconds(1);
         for (int i = 0; i < retries; i++)
         {
@@ -20,9 +20,9 @@ public static class RetryAsync
         return false;
     }
     public static async Task<T?> WhileNull<T>(Func<Task<T?>> action, 
-        int retries = 3, TimeSpan? interval = null, bool throwOnMaxRetryCount = true, Exception? maxRetryCountException = null)
+        int retries = 3, TimeSpan? interval = null, bool throwOnMaxRetryCount = true, System.Exception? maxRetryCountException = null)
     {
-        maxRetryCountException ??= new Exception("Превышено количество попыток Retry");
+        maxRetryCountException ??= new System.Exception("Превышено количество попыток Retry");
         interval ??= TimeSpan.FromSeconds(1);
         for (int i = 0; i < retries; i++)
         {
