@@ -9,28 +9,28 @@ namespace EsiaUserGenerator.Dto.Model;
     {
         private const string DATE_FORMAT = "dd.MM.yyyy";
         [JsonProperty("lastName")]
-        public string LastName { get; set; }
+        public string? LastName { get; set; }
 
         [JsonProperty("firstName")]
-        public string FirstName { get; set; }
+        public string? FirstName { get; set; }
 
         [JsonProperty("gender")]
-        public string Gender { get; set; }
+        public string? Gender { get; set; }
 
         [JsonProperty("birthDate")]
-        [JsonConverter(typeof(DateTime), DATE_FORMAT)]
-        public DateTime BirthDate { get; set; }
+        [JsonConverter(typeof(CustomDateTimeConverter), DATE_FORMAT)]
+        public DateTime? BirthDate { get; set; }
 
         [JsonProperty("birthPlace")]
-        public string BirthPlace { get; set; }
+        public string? BirthPlace { get; set; }
 
         [JsonProperty("citizenship")]
-        public string Citizenship { get; set; }
+        public string? Citizenship { get; set; }
 
         [JsonProperty("snils")]
-        public string Snils { get; set; }
+        public string? Snils { get; set; }
         [JsonProperty("documents")]
-        public DocumentsInfo Documents { get; set; }
+        public DocumentsInfo? Documents { get; set; }
         
         public class DocumentsInfo
         {
@@ -40,25 +40,25 @@ namespace EsiaUserGenerator.Dto.Model;
             {
                 [JsonProperty("number")]
                 [JsonConverter(typeof(LongParseConverter))]
-                public long Number { get; set; }
+                public long? Number { get; set; }
 
                 [JsonProperty("issueDate")]
-                [JsonConverter(typeof(DateTime), DATE_FORMAT)]
+                [JsonConverter(typeof(CustomDateTimeConverter), DATE_FORMAT)]
                 public DateTime? IssueDate { get; set; }
 
                 [JsonProperty("series")]
                 [JsonConverter(typeof(LongParseConverter))]
-                public long Series { get; set; }
+                public long? Series { get; set; }
 
                 [JsonProperty("type")]
-                public string Type { get; set; }
+                public string? Type { get; set; }
 
                 [JsonProperty("issueId")]
                 [JsonConverter(typeof(LongParseConverter))]
-                public long IssueId { get; set; }
+                public long? IssueId { get; set; }
 
                 [JsonProperty("issuedBy")]
-                public string IssuedBy { get; set; }
+                public string? IssuedBy { get; set; }
             }
         }
     }

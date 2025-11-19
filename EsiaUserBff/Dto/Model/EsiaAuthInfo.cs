@@ -7,7 +7,7 @@ public class EsiaAuthInfo
 {
     [JsonProperty("phone")]
     [JsonConverter(typeof(LongParseConverter))]
-    public long Phone { get; set; }
+    public string?  Phone { get; set; }
     [JsonProperty("password")]
-    public string Password { get; set; }
+    public string? Password { get; set; }
 }
