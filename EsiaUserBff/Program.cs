@@ -20,7 +20,12 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 );
 builder.Services.AddSingleton<IRequestStatusStore, RedisRequestStatusStore>();
 builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
-builder.Services.AddHostedService<Worker>();
+for (int i = 0; i < 10; i++)
+{
+    builder.Services.AddSingleton<Worker>();
+    builder.Services.AddHostedService<Worker>(p => p.GetRequiredService<Worker>());
+}
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

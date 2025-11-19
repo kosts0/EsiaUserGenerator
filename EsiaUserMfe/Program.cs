@@ -5,11 +5,12 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 // Указываем корневой компонент
 builder.RootComponents.Add<App>("#app");
 
+builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+    .AddJsonFile($"appsettings.{builder.HostEnvironment.Environment}.json", optional: true);
 
-// HttpClient – наша связь с API
 builder.Services.AddScoped(sp => new HttpClient
 {
-    BaseAddress = new Uri("https://bff.mycompany.com/") // URL твоего BFF
+    BaseAddress = new Uri(builder.Configuration["BffUrl"])
 });
 
 await builder.Build().RunAsync();

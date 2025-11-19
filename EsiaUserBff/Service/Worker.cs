@@ -20,15 +20,18 @@ public class Worker : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             var workItem = await _queue.DequeueAsync(stoppingToken);
-
-            try
+            _ = Task.Run(async () =>
             {
-                await workItem(stoppingToken);
-            }
-            catch (System.Exception ex)
-            {
-                _logger.LogError(ex, "Background task failed");
-            }
+                try
+                {
+                    _logger.LogDebug("Starting task executing");
+                    await workItem(stoppingToken);
+                }
+                catch (System.Exception ex)
+                {
+                    _logger.LogError(ex, "Background task failed");
+                }
+            }, stoppingToken);
         }
     }
 }
