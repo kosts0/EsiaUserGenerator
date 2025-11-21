@@ -9,6 +9,8 @@ using EsiaUserGenerator.Service.Interface;
 using EsiaUserGenerator.Utils;
 using Newtonsoft.Json.Linq;
 using System;
+using EsiaUserGenerator.Db.Models;
+using EsiaUserGenerator.Db.UoW;
 
 namespace EsiaUserGenerator.Service;
 
@@ -16,13 +18,17 @@ public class EsiaRegistrationService : IEsiaRegistrationService
 {
     private IRequestStatusStore _requestStatusStore;
     private ILoggerFactory _loggerFactory;
-    public EsiaRegistrationService(ILogger<EsiaRegistrationService> logger,  ILoggerFactory loggerFactory, IRequestStatusStore requestStatusStore)
+    private IUnitOfWork _unitOfWork;
+    public EsiaRegistrationService(ILogger<EsiaRegistrationService> logger,  ILoggerFactory loggerFactory, 
+        IRequestStatusStore requestStatusStore, 
+        IUnitOfWork uow)
     { 
         _logger = logger;
         var loggerHandlerLogger = loggerFactory.CreateLogger<LoggingHandler>();
         _loggingHandler = new LoggingHandler(loggerHandlerLogger);
         _http = CreateClient();
         _requestStatusStore = requestStatusStore;
+        _unitOfWork = uow;
     }
     private HttpClient CreateClient()
     {
@@ -60,37 +66,53 @@ public class EsiaRegistrationService : IEsiaRegistrationService
         CreateUserResult result = new CreateUserResult()
         {
         };
+        EsiaUser esiaUserDb = new(){ 
+            Id = Guid.NewGuid(),
+            Login = esiaUserInfo.EsiaAuthInfo.Phone,
+            Password = esiaUserInfo.EsiaAuthInfo.Password,
+            DateTimeCreated = DateTime.Now
+        };
+        await _unitOfWork.Users.AddAsync(esiaUserDb);
+        esiaUserDb.Status = nameof(PostInitDataAsync);
         await _requestStatusStore.SetStatusAsync(requestId, nameof(PostInitDataAsync));
         await PostInitDataAsync(esiaUserInfo, ct);
         
+
+        esiaUserDb.Status = "Waiting sms";
         await _requestStatusStore.SetStatusAsync(requestId, $"Waiting sms. Phone: {esiaUserInfo.EsiaAuthInfo.Phone}");
         var sms = await RetryAsync.WhileNull(() => GetAuthSms(esiaUserInfo.EsiaAuthInfo.Phone),
             retries: 30, interval: TimeSpan.FromSeconds(5));
         
+        esiaUserDb.Status = "Confirm SMS";
         await _requestStatusStore.SetStatusAsync(requestId, $"Confirm SMS");
         await SetCode(sms);
 
+        esiaUserDb.Status = "Set password";
         await _requestStatusStore.SetStatusAsync(requestId, $"Set password");
         await CreatePassword(esiaUserInfo, ct);
 
-        
+        esiaUserDb.Status = "Oauth redirect ot authorization";
         await _requestStatusStore.SetStatusAsync(requestId, "Oauth redirect ot authorization");
         var oauth = await GetOauthEndpoint();
         
         
         await GoToOauth(oauth);
         var loginUrl = await Login(esiaUserInfo.EsiaAuthInfo, ct);
-
+        
+        esiaUserDb.Status = "Authorization";
         await _requestStatusStore.SetStatusAsync(requestId, "Authorization");
         await ExecuteRequest(() => _http.GetAsync(new Uri(loginUrl), ct));
 
+        esiaUserDb.Status = "Update person data";
         await _requestStatusStore.SetStatusAsync(requestId, "Update person data");
         await UpdatePersonData(esiaUserInfo.EsiaUserInfo, ct);
 
+        esiaUserDb.Status = nameof(SetPostmailConfirmation);
         await _requestStatusStore.SetStatusAsync(requestId, nameof(SetPostmailConfirmation));
         await SetPostmailConfirmation(ct);
 
-        await _requestStatusStore.SetStatusAsync(requestId, "Wait postman code");
+        esiaUserDb.Status = "Wait postmail code";
+        await _requestStatusStore.SetStatusAsync(requestId, "Wait postmail code");
         await GetPostCodes(ct);
         
         var postalCode = await RetryAsync.WhileNull(() =>
@@ -99,6 +121,7 @@ public class EsiaRegistrationService : IEsiaRegistrationService
             return GetPostCode(esiaUserInfo.EsiaUserInfo.Snils, ct);
         }, retries: 30, interval: TimeSpan.FromSeconds(5));
 
+        esiaUserDb.Status = "Confirm postmail code";
         await _requestStatusStore.SetStatusAsync(requestId, "Confirm postmail code");
         await ConfirmPostal(postalCode, ct);
         result.Data = new()
@@ -108,7 +131,6 @@ public class EsiaRegistrationService : IEsiaRegistrationService
         result.CodeStatus = "Created";
         
         _logger.LogInformation("User created successfully with UserId={UserId}", result.Data.UserId);
-
         return result;
     }
     

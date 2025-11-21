@@ -1,3 +1,4 @@
+using EsiaUserGenerator.Db.UoW;
 using EsiaUserGenerator.Dto;
 using EsiaUserGenerator.Dto.API;
 using EsiaUserGenerator.Exception;
@@ -15,12 +16,16 @@ public sealed class UsersController : ControllerBase
     private readonly IRequestStatusStore _requestStatusStore;
     ILogger<UsersController> _logger;
     private IBackgroundTaskQueue _taskQueue;
-    public UsersController(IEsiaRegistrationService esia, IRequestStatusStore requestStatusStore, ILogger<UsersController> logger, IBackgroundTaskQueue taskQueue)
+    private IUnitOfWork  _unitOfWork;
+    public UsersController(IEsiaRegistrationService esia, IRequestStatusStore requestStatusStore, ILogger<UsersController> logger,
+        IBackgroundTaskQueue taskQueue,
+        IUnitOfWork unitOfWork)
     {
         _esia = esia;
         _requestStatusStore = requestStatusStore;
         _logger = logger;
         _taskQueue = taskQueue;
+        _unitOfWork = unitOfWork;
     }
 
     [HttpPost("start-user-create")]
@@ -59,7 +64,8 @@ public sealed class UsersController : ControllerBase
         }
         catch (EsiaRequestException exception)
         {
-            await _requestStatusStore.SetStatusAsync(req.Data.RequestId.ToString(), $"EsiaRequestException: {exception.Message}");
+            await _requestStatusStore.SetStatusAsync(req.Data.RequestId.ToString(),
+                $"EsiaRequestException: {exception.Message}");
             return BadRequest(new CreateUserResult()
             {
                 CodeStatus = "Esia integration error",
@@ -76,6 +82,10 @@ public sealed class UsersController : ControllerBase
                 Code = 500,
                 Exception = ex.Message
             });
+        }
+        finally
+        {
+            await _unitOfWork.CompleteAsync();
         }
     }
 }
