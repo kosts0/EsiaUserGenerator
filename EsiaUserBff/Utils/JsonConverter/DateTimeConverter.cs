@@ -1,35 +1,36 @@
-namespace EsiaUserGenerator.Utils.JsonConverter;
+using System.Text.Json;
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+namespace EsiaUserGenerator.Utils.JsonConverter;
+using System.Text.Json.Serialization;
 using System.Globalization;
 
-public class CustomDateTimeConverter : DateTimeConverterBase
+   public class CustomDateTimeConverter : JsonConverter<DateTime?>
 {
-    private readonly string _format;
+    private const string _format = "dd.MM.yyyy";
 
-    public CustomDateTimeConverter(string format)
+    public CustomDateTimeConverter()
     {
-        _format = format;
     }
 
-    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+    public override DateTime? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        DateTime dateTime = (DateTime)value;
-        writer.WriteValue(dateTime.ToString(_format, CultureInfo.InvariantCulture));
-    }
-
-    public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-    {
-        if (reader.TokenType == JsonToken.Null)
-            return null;
-
-        string dateString = reader.Value.ToString();
+        // Read the string value from the JSON
+        string dateString = reader.GetString();
+        // Parse the string into a DateTime using the specified format
         return DateTime.ParseExact(dateString, _format, CultureInfo.InvariantCulture);
     }
 
-    public override bool CanConvert(Type objectType)
+    public override void Write(Utf8JsonWriter writer, DateTime? value, JsonSerializerOptions options)
     {
-        return objectType == typeof(DateTime) || objectType == typeof(DateTime?);
+        // Format the DateTime value into a string using the specified format
+        if (value.HasValue)
+        {
+            writer.WriteStringValue(value.Value.ToString(_format, CultureInfo.InvariantCulture));
+        }
+        else
+        {
+            writer.WriteNullValue();
+        }
+        
     }
 }

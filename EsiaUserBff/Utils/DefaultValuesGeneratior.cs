@@ -45,10 +45,10 @@ public static class DefaultValuesGeneratior
         switch (documentInfo.Type)
         {
             case "RF_PASSPORT":
-                documentInfo.Number ??= _faker.Random.Int(1000,  9999);
-                documentInfo.Series ??= _faker.Random.Int(1000000,  999999);
+                documentInfo.Number ??= _faker.Random.ReplaceNumbers("####");
+                documentInfo.Series ??= _faker.Random.ReplaceNumbers("######");
                 documentInfo.IssueDate ??=  _faker.Date.Recent();
-                documentInfo.IssueId  ??= _faker.Random.Int(100000,  999999);
+                documentInfo.IssueId  ??= _faker.Random.ReplaceNumbers("######");
                 documentInfo.IssuedBy ??= _faker.Company.CompanyName();
                 return documentInfo;
             default: throw new NotImplementedException($"Not implemented for document type {documentInfo.Type}"); 

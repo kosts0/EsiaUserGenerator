@@ -18,7 +18,7 @@ namespace EsiaUserGenerator.Dto.Model;
         public string? Gender { get; set; }
 
         [JsonProperty("birthDate")]
-        [JsonConverter(typeof(CustomDateTimeConverter), DATE_FORMAT)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(CustomDateTimeConverter))]
         public DateTime? BirthDate { get; set; }
 
         [JsonProperty("birthPlace")]
@@ -40,22 +40,22 @@ namespace EsiaUserGenerator.Dto.Model;
             {
                 [JsonProperty("number")]
                 [JsonConverter(typeof(LongParseConverter))]
-                public long? Number { get; set; }
+                public string? Number { get; set; }
 
                 [JsonProperty("issueDate")]
-                [JsonConverter(typeof(CustomDateTimeConverter), DATE_FORMAT)]
+                [System.Text.Json.Serialization.JsonConverter(typeof(CustomDateTimeConverter))]
                 public DateTime? IssueDate { get; set; }
 
                 [JsonProperty("series")]
                 [JsonConverter(typeof(LongParseConverter))]
-                public long? Series { get; set; }
+                public string? Series { get; set; }
 
                 [JsonProperty("type")]
                 public string? Type { get; set; }
 
                 [JsonProperty("issueId")]
                 [JsonConverter(typeof(LongParseConverter))]
-                public long? IssueId { get; set; }
+                public string? IssueId { get; set; }
 
                 [JsonProperty("issuedBy")]
                 public string? IssuedBy { get; set; }
