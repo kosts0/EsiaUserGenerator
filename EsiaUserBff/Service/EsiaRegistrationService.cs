@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Cache;
 using System.Text.RegularExpressions;
 using EsiaUserGenerator.Db.Models;
 using EsiaUserGenerator.Db.UoW;
@@ -27,25 +28,17 @@ public class EsiaRegistrationService : IEsiaRegistrationService
         _requestStatusStore = requestStatusStore;
         _unitOfWork = uow;
 
-        var options = new RestClientOptions("https://esia-portal1.test.gosuslugi.ru")
-        {
-            FollowRedirects = false,
-            CookieContainer = new CookieContainer()
-        };
 
-        _client = CreateClient(false);
-    }
-    private RestClient CreateClient(bool followRedirects)
-    {
-        return new RestClient(new RestClientOptions("https://esia-portal1.test.gosuslugi.ru")
+
+        _client = new RestClient("https://esia-portal1.test.gosuslugi.ru")
         {
             CookieContainer = _cookieContainer,
-            FollowRedirects = followRedirects
-        });
+            
+        };
     }
     private void SetRedirects(bool enabled)
     {
-        _client = CreateClient(enabled);
+        _client.FollowRedirects = enabled;
     }
 
     private CookieContainer _cookieContainer = new CookieContainer();
@@ -87,7 +80,7 @@ public class EsiaRegistrationService : IEsiaRegistrationService
         await SetCode(sms);
 
         await CreatePassword(esiaUserInfo, ct);
-        _cookieContainer = new();
+       
         SetRedirects(false);
         var oauth = await GetOauthEndpoint();
 
@@ -98,7 +91,7 @@ public class EsiaRegistrationService : IEsiaRegistrationService
         var loginUrl = await Login(esiaUserInfo.EsiaAuthInfo, ct);
 
         SetRedirects(true);
-        await Execute(() => new RestRequest(loginUrl, Method.Get));
+        await Execute(() => new RestRequest(loginUrl, Method.GET));
 
         await UpdatePersonData(esiaUserInfo.EsiaUserInfo, ct);
 
@@ -129,7 +122,7 @@ public class EsiaRegistrationService : IEsiaRegistrationService
     // REST METHODS
     // --------------------------------------------------------
 
-    private async Task Execute(Func<RestRequest> build)
+    private async Task Execute(Func<IRestRequest> build)
     {
         var request = build();
         var response = await _client.ExecuteAsync(request);
@@ -143,12 +136,12 @@ public class EsiaRegistrationService : IEsiaRegistrationService
     // ---------- POST INIT DATA ----------
     private async Task PostInitDataAsync(CreateUserData data, CancellationToken ct)
     {
-        var request = new RestRequest("/registration_api/registration/v1/user-data", Method.Post)
+        var request = new RestRequest("/registration_api/registration/v1/user-data", Method.POST)
             .AddJsonBody(new
             {
-                FirstName = data.EsiaUserInfo?.FirstName,
-                LastName = data.EsiaUserInfo?.LastName,
-                Phone = data.EsiaAuthInfo?.Phone
+                first_name = data.EsiaUserInfo?.FirstName,
+                last_name = data.EsiaUserInfo?.LastName,
+                phone = data.EsiaAuthInfo?.Phone
             });
 
         await Execute(() => request);
@@ -157,7 +150,7 @@ public class EsiaRegistrationService : IEsiaRegistrationService
     // ---------- GET SMS ----------
     private async Task<string?> GetAuthSms(string phone)
     {
-        var req = new RestRequest("/logs/sms/", Method.Get);
+        var req = new RestRequest("/logs/sms/", Method.GET);
         var resp = await _client.ExecuteAsync(req);
 
         if (!resp.IsSuccessful) return null;
@@ -171,8 +164,8 @@ public class EsiaRegistrationService : IEsiaRegistrationService
     // ---------- SET SMS CODE ----------
     public async Task SetCode(string code)
     {
-        var req = new RestRequest("/registration_api/activation/phone/verify-code", Method.Post)
-            .AddJsonBody(new { Code = code });
+        var req = new RestRequest("/registration_api/activation/phone/verify-code", Method.POST)
+            .AddJsonBody(new { code = code });
 
         await Execute(() => req);
     }
@@ -180,8 +173,8 @@ public class EsiaRegistrationService : IEsiaRegistrationService
     // ---------- SET PASSWORD ----------
     private async Task CreatePassword(CreateUserData data, CancellationToken ct)
     {
-        var req = new RestRequest("/registration_api/complete", Method.Post)
-            .AddJsonBody(new { Password = data.EsiaAuthInfo?.Password });
+        var req = new RestRequest("/registration_api/complete", Method.POST)
+            .AddJsonBody(new { password = data.EsiaAuthInfo?.Password });
 
         await Execute(() => req);
     }
@@ -189,7 +182,7 @@ public class EsiaRegistrationService : IEsiaRegistrationService
     // ---------- OAUTH DISCOVERY ----------
     private async Task<string> GetOauthEndpoint()
     {
-        var req = new RestRequest("/profile/login/", Method.Get)
+        var req = new RestRequest("/profile/login/", Method.GET)
             .AddHeader("Referer", "https://esia-portal1.test.gosuslugi.ru/profile/user/personal");
         var resp = await _client.ExecuteAsync(req);
 
@@ -202,11 +195,11 @@ public class EsiaRegistrationService : IEsiaRegistrationService
     // ---------- AUTH LOGIN ----------
     private async Task<string> Login(EsiaAuthInfo auth, CancellationToken ct)
     {
-        var req = new RestRequest("/aas/oauth2/api/login", Method.Post)
+        var req = new RestRequest("/aas/oauth2/api/login", Method.POST)
             .AddJsonBody(new
             {
-                Login = auth.Phone.Replace("(", "").Replace(")", ""),
-                Password = auth.Password
+                login = auth.Phone.Replace("(", "").Replace(")", ""),
+                password = auth.Password
             });
 
         var resp = await _client.ExecuteAsync(req);
@@ -224,11 +217,13 @@ public class EsiaRegistrationService : IEsiaRegistrationService
     // ---------- FOLLOW REDIRECTS CHAIN ----------
     private async Task FollowAllRedirects(string url)
     {
+        await Execute(() => new RestRequest(url));
+        return;
         var next = url;
 
         while (true)
         {
-            var req = new RestRequest(next, Method.Get);
+            var req = new RestRequest(next, Method.GET);
             var resp = await _client.ExecuteAsync(req);
 
             if (resp.Headers.FirstOrDefault(h => h.Name == "Location")?.Value is not string location)
@@ -244,7 +239,7 @@ public class EsiaRegistrationService : IEsiaRegistrationService
     // ---------- PERSON UPDATE ----------
     private async Task UpdatePersonData(EsiaUserInfo info, CancellationToken ct)
     {
-        var req = new RestRequest("/profile/rs/prns/up", Method.Post)
+        var req = new RestRequest("/profile/rs/prns/up", Method.POST)
             .AddJsonBody(info);
 
         await Execute(() => req);
@@ -253,7 +248,7 @@ public class EsiaRegistrationService : IEsiaRegistrationService
     // ---------- SET POSTMAIL ----------
     private async Task SetPostmailConfirmation(CancellationToken ct)
     {
-        var req = new RestRequest("/profile/rs/prns/usrcfm/addr", Method.Post)
+        var req = new RestRequest("/profile/rs/prns/usrcfm/addr", Method.POST)
             .AddJsonBody(new
             {
                 type = "PLV",
@@ -274,7 +269,7 @@ public class EsiaRegistrationService : IEsiaRegistrationService
     // ---------- ALL POST CODES ----------
     private async Task<string> GetPostCodes(CancellationToken ct)
     {
-        var resp = await _client.ExecuteAsync(new RestRequest("/logs/postcodes/", Method.Get));
+        var resp = await _client.ExecuteAsync(new RestRequest("/logs/postcodes/", Method.GET));
         return resp.Content ?? "";
     }
 
@@ -289,7 +284,7 @@ public class EsiaRegistrationService : IEsiaRegistrationService
     // ---------- CONFIRM POST ----------
     private async Task ConfirmPostal(string code, CancellationToken ct)
     {
-        var req = new RestRequest($"/profile/rs/prns/usrcfm/by-post?cfmPostCode={code}", Method.Get);
+        var req = new RestRequest($"/profile/rs/prns/usrcfm/by-post?cfmPostCode={code}", Method.GET);
         await Execute(() => req);
     }
 }
