@@ -16,7 +16,7 @@ public static class DefaultValuesGeneratior
        
         data.EsiaUserInfo.FirstName ??= person.FirstName;
         data.EsiaUserInfo.LastName ??= person.LastName;
-        data.EsiaUserInfo.Gender ??= person.Gender == Name.Gender.Male ? "M" : "Ж";
+        data.EsiaUserInfo.Gender ??= person.Gender == Name.Gender.Male ? "M" : "F";
         data.EsiaUserInfo.BirthDate ??= person.DateOfBirth;
         data.EsiaUserInfo.BirthPlace ??= person.Address.City;
         data.EsiaUserInfo.Citizenship ??= "RUS";
@@ -45,11 +45,11 @@ public static class DefaultValuesGeneratior
         switch (documentInfo.Type)
         {
             case "RF_PASSPORT":
-                documentInfo.Number ??= _faker.Random.Int(1000,  9999);
-                documentInfo.Series ??= _faker.Random.Int(1000000,  999999);
+                documentInfo.Number ??= _faker.Random.ReplaceNumbers("######");
+                documentInfo.Series ??= _faker.Random.ReplaceNumbers("####");
                 documentInfo.IssueDate ??=  _faker.Date.Recent();
-                documentInfo.IssueId  ??= _faker.Random.Int(100000,  999999);
-                documentInfo.IssuedBy ??= _faker.Company.CompanyName();
+                documentInfo.IssueId  ??= _faker.Random.ReplaceNumbers("######");
+                documentInfo.IssuedBy ??= $"умвд автотестирования №{_faker.Random.Int(1, 100)}";
                 return documentInfo;
             default: throw new NotImplementedException($"Not implemented for document type {documentInfo.Type}"); 
         }
