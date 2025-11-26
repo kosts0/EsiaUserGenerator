@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using EsiaUserGenerator.Service.Interface;
 
 namespace EsiaUserGenerator.Service;
@@ -22,6 +23,8 @@ public sealed class WorkerBackgroundService : BackgroundService
             _ = Task.Run(async () =>
             {
                 using var scope = _provider.CreateScope();
+                using var activity = new Activity("BackgroundUserCreation");
+                activity.Start();
                 try
                 {
                     await workItem(scope.ServiceProvider, stoppingToken);

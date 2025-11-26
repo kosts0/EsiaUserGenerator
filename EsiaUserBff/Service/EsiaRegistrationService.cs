@@ -56,7 +56,8 @@ public class EsiaRegistrationService : IEsiaRegistrationService
     private readonly ILogger<EsiaRegistrationService> _logger;
     public async Task<CreateUserResult> CreateUserAsync(CreateUserData esiaUserInfo, CancellationToken ct)
     {
-        var requestId = esiaUserInfo.RequestId?.ToString() ?? Guid.NewGuid().ToString() ;
+        var requestId = esiaUserInfo.RequestId?.ToString() ?? Guid.NewGuid().ToString();
+        esiaUserInfo.GenarateDefaultValues();
         var activity = Activity.Current;
         if (activity != null)
         {
