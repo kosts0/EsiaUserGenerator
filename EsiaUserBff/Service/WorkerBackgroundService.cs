@@ -2,36 +2,36 @@ using EsiaUserGenerator.Service.Interface;
 
 namespace EsiaUserGenerator.Service;
 
-public class Worker : BackgroundService
+public sealed class WorkerBackgroundService : BackgroundService
 {
+    private readonly IServiceProvider _provider;
     private readonly IBackgroundTaskQueue _queue;
-    private readonly ILogger<Worker> _logger;
 
-    public Worker(IBackgroundTaskQueue queue, ILogger<Worker> logger)
+    public WorkerBackgroundService(IServiceProvider provider, IBackgroundTaskQueue queue)
     {
+        _provider = provider;
         _queue = queue;
-        _logger = logger;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Worker started");
-
         while (!stoppingToken.IsCancellationRequested)
         {
             var workItem = await _queue.DequeueAsync(stoppingToken);
+
             _ = Task.Run(async () =>
             {
+                using var scope = _provider.CreateScope();
                 try
                 {
-                    _logger.LogDebug("Starting task executing");
-                    await workItem(stoppingToken);
+                    await workItem(scope.ServiceProvider, stoppingToken);
                 }
                 catch (System.Exception ex)
                 {
-                    _logger.LogError(ex, "Background task failed");
+                    var logger = scope.ServiceProvider.GetRequiredService<ILogger<WorkerBackgroundService>>();
+                    logger.LogError(ex, "Background task failed");
                 }
-            }, stoppingToken);
+            });
         }
     }
 }

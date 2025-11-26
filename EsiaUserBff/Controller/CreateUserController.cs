@@ -29,33 +29,46 @@ public sealed class UsersController : ControllerBase
     }
 
     [HttpPost("start-user-create")]
-    public async Task<IActionResult> StartUserCreate([FromBody] CreateUserRequest req, CancellationToken ct)
+    public async Task<IActionResult> StartUserCreate([FromBody] CreateUserRequest req)
     {
-        Guid requestId = Guid.NewGuid();
-        _logger.LogInformation("Start user creation process {requestId}", requestId);
+        var requestId = Guid.NewGuid();
         await _requestStatusStore.SetStatusAsync(requestId.ToString(), "Started");
+
         req.Data ??= new();
         req.Data.RequestId = requestId;
-        await _taskQueue.QueueBackgroundWorkItemAsync(async ct =>
+
+        await _taskQueue.QueueAsync(async (sp, ct) =>
         {
-            await Create(req, ct);
-        });
-        var response = new StartRequestResponse()
-        {
-            CodeStatus = "Created",
-            Code = 201,
-            Data = new StartRequestData()
+            var esiaService = sp.GetRequiredService<IEsiaRegistrationService>();
+            var uow = sp.GetRequiredService<IUnitOfWork>();
+
+            try
             {
-                RequestId = requestId
+                await esiaService.CreateUserAsync(req.Data, ct);
+                await _requestStatusStore.SetStatusAsync(requestId.ToString(), "Completed");
             }
-        };
-        return Ok(response);
+            catch (System.Exception ex)
+            {
+                await _requestStatusStore.SetStatusAsync(requestId.ToString(), "Error: " + ex.Message);
+            }
+            finally
+            {
+                await uow.CompleteAsync();
+            }
+        });
+        return Ok(new
+        {
+            RequestId = requestId,
+            Status = "Queued"
+        });
     }
+
     [HttpPost("create")]
     public async Task<IActionResult> Create([FromBody] CreateUserRequest req, CancellationToken ct)
     {
         req.Data ??= new CreateUserData();
         req.Data.GenarateDefaultValues();
+        req.Data.RequestId ??= Guid.NewGuid();
         try
         {
             var result = await _esia.CreateUserAsync(req.Data, ct);
@@ -69,8 +82,9 @@ public sealed class UsersController : ControllerBase
             return BadRequest(new CreateUserResult()
             {
                 CodeStatus = "Esia integration error",
-                Exception = exception.Message,
-                Code = 400
+                ExceptionMessage = exception.Message,
+                Code = 400,
+                Exception = exception
             });
         }
         catch (System.Exception ex)
@@ -80,7 +94,8 @@ public sealed class UsersController : ControllerBase
             {
                 CodeStatus = "Internal error",
                 Code = 500,
-                Exception = ex.Message
+                ExceptionMessage = ex.Message,
+                Exception = ex
             });
         }
         finally

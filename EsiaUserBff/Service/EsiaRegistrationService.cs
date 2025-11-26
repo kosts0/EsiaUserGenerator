@@ -77,7 +77,8 @@ public class EsiaRegistrationService : IEsiaRegistrationService
             Id = Guid.NewGuid(),
             Login = esiaUserInfo.EsiaAuthInfo.Phone,
             Password = esiaUserInfo.EsiaAuthInfo.Password,
-            DateTimeCreated = DateTime.UtcNow
+            DateTimeCreated = DateTime.UtcNow,
+            CreatedRequestId = esiaUserInfo.RequestId
         };
         /*if (mock)
         {
@@ -139,11 +140,13 @@ public class EsiaRegistrationService : IEsiaRegistrationService
         await ConfirmPostal(postalCode, ct);
         result.Data = new()
         {
-            UserId = Guid.NewGuid()
+            EsiaUser = esiaUserDb
         };
         result.CodeStatus = "Created";
+        esiaUserDb.Status = "Created";
         
-        _logger.LogInformation("User created successfully with UserId={UserId}", result.Data.UserId);
+        
+        _logger.LogInformation("User created successfully with UserId={UserId}", result.Data.EsiaUser.Id);
         return result;
     }
     
@@ -219,10 +222,7 @@ Status: {response.StatusCode}");
             requestMessage.Headers.Add("Referer", _http.BaseAddress + "/profile/user/personal");
            var responseMessage = await _http.SendAsync(requestMessage);
            return null;
-           var locationHeader = responseMessage.Headers.Location;
-           if (locationHeader == null) throw new System.Exception("Error during get oauth url");
-           _logger.LogInformation("Response from location: {Location}", locationHeader);
-           return locationHeader.ToString();
+           
         }
         return null;
     }
@@ -295,26 +295,7 @@ Status: {response.StatusCode}");
     {
         await ExecuteRequest(() => _http.PostAsync(new Uri($"/profile/rs/prns/usrcfm/by-post?cfmPostCode={code}", UriKind.Relative), null, ct));
     }
-
-    private async Task GoToOauth(string oauth)
-    {
-        _logger.LogInformation("Go to oauth url: {OauthUrl}", oauth);
-        await ExecuteRequest(() => _http.GetAsync(oauth));
-        return;
-        var response =await _http.GetAsync(oauth);
-        while (response.Headers.Location != null)
-        {
-            _logger.LogInformation("Go to redirect url: {OauthUrl}", response.Headers.Location);
-            response =await _http.GetAsync(response.Headers.Location);
-            var redirectHeader = response.Headers.Location;
-            if (redirectHeader != null && redirectHeader.ToString().Contains("/user/personal"))
-            {
-                _logger.LogInformation("Finish redirect chain before {redirectHeader}", redirectHeader);
-                break;
-            }
-            _logger.LogDebug("Headers after redirect : {headers}", response.Headers);
-        }
-    }
+    
 
     private async Task<string?> AfterAuthRedirect(string loginUrl, CancellationToken ct)
     {
@@ -330,14 +311,11 @@ Status: {response.StatusCode}");
         do
         {
             _http = CreateClient();
-            //SetFollowRedirect(false);
+            
             var oauth = await GetOauthEndpoint();
 
-            //SetFollowRedirect(true);
-            ///await GoToOauth(oauth);
-            //SetFollowRedirect(false);
             var loginUrl = await Login(authInfo, ct);
-            //SetFollowRedirect(true);
+           
             oid = await AfterAuthRedirect(loginUrl, ct);
             retryCount--;
         } while (string.IsNullOrEmpty(oid) && retryCount > 0);

@@ -20,7 +20,7 @@ internal class Program
             options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Репозитории и UnitOfWork
-        builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+        
 
         builder.Services.AddScoped<IEsiaUserRepository, EsiaUserRepository>();
         builder.Services.AddScoped<ICreatedHistoryRepository, CreatedHistoryRepository>();
@@ -34,7 +34,9 @@ internal class Program
         builder.Services.AddControllers();
         builder.Services.AddHttpClient();
         builder.Services.AddTransient<LoggingHandler>();
-        builder.Services.AddTransient<IEsiaRegistrationService, EsiaRegistrationService>();
+       
+        builder.Services.AddScoped<IEsiaRegistrationService, EsiaRegistrationService>();
+        builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
         //redis
         builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
             ConnectionMultiplexer.Connect("localhost:6379")
@@ -43,8 +45,8 @@ internal class Program
         builder.Services.AddSingleton<IRequestStatusStore, RedisRequestStatusStore>();
         builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
         //request task worker
-            builder.Services.AddSingleton<Worker>();
-            builder.Services.AddHostedService<Worker>(p => p.GetRequiredService<Worker>());
+      
+        builder.Services.AddHostedService<WorkerBackgroundService>();
             
             var app = builder.Build();
 
