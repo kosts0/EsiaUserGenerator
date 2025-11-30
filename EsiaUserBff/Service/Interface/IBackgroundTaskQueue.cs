@@ -2,6 +2,6 @@ namespace EsiaUserGenerator.Service.Interface;
 
 public interface IBackgroundTaskQueue
 {
-    ValueTask QueueBackgroundWorkItemAsync(Func<CancellationToken, Task> workItem);
-    ValueTask<Func<CancellationToken, Task>> DequeueAsync(CancellationToken cancellationToken);
+    ValueTask QueueAsync(Func<IServiceProvider, CancellationToken, Task> workItem);
+    ValueTask<Func<IServiceProvider, CancellationToken, Task>> DequeueAsync(CancellationToken ct);
 }
