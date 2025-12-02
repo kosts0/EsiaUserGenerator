@@ -1,0 +1,46 @@
+@page "/status/{RequestId}"
+@using EsiaUserMfe.Service.Interface
+@inject IApiClient ApiCLient
+<h3>StatusPage</h3>
+
+<p>Текущий статус заявки: @CurrentStatus. Повторений: @RetryCount</p>
+
+@code {
+    private Timer _pollingTimer;
+    [Parameter] public string? RequestId { get; set; }
+
+    private Guid _requestId;
+    public int RetryCount = 0;
+
+    private string CurrentStatus;
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        Guid.TryParse(RequestId, out _requestId);
+
+            CurrentStatus = await ApiCLient.GetRequestStatus(_requestId);
+
+
+
+        if (string.IsNullOrEmpty(CurrentStatus))
+        {
+            CurrentStatus = "Заявка не найдена";
+            return;
+        }
+        RetryCount++;
+        _pollingTimer = new Timer(async _ =>
+        {
+            await UpdateCurrentStatus();
+        }, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+    }
+
+    private async Task UpdateCurrentStatus()
+    {
+        CurrentStatus = await ApiCLient.GetRequestStatus(_requestId);
+        await InvokeAsync(StateHasChanged);
+    }
+    public void Dispose()
+    {
+        _pollingTimer?.Dispose();
+    }
+}

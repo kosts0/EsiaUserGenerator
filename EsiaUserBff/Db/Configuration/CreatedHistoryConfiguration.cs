@@ -5,7 +5,7 @@ namespace EsiaUserGenerator.Db.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-public class CreatedHistoryConfiguration : IEntityTypeConfiguration<CreatedHistory>
+/*public class CreatedHistoryConfiguration : IEntityTypeConfiguration<CreatedHistory>
 {
     public void Configure(EntityTypeBuilder<CreatedHistory> builder)
     {
@@ -13,4 +13,4 @@ public class CreatedHistoryConfiguration : IEntityTypeConfiguration<CreatedHisto
 
         builder.HasKey(x => new { x.UserId, x.CreatedRequestId });
     }
-}
+}*/

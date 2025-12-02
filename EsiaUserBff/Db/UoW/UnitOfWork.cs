@@ -5,19 +5,19 @@ public class UnitOfWork : IUnitOfWork
     private readonly ApplicationDbContext _context;
 
     public IEsiaUserRepository Users { get; }
-    public ICreatedHistoryRepository CreatedHistory { get; }
+    //public ICreatedHistoryRepository CreatedHistory { get; }
     public IRequestHistoryRepository RequestHistory { get; }
 
     public UnitOfWork(
         ApplicationDbContext context,
         IEsiaUserRepository users,
-        ICreatedHistoryRepository createdHistory,
+        //ICreatedHistoryRepository createdHistory,
         IRequestHistoryRepository requestHistory)
     {
         _context = context;
 
         Users = users;
-        CreatedHistory = createdHistory;
+        //CreatedHistory = createdHistory;
         RequestHistory = requestHistory;
     }
 

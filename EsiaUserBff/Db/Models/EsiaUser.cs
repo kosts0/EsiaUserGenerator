@@ -15,7 +15,7 @@ public class EsiaUser
 
     public Guid? CreatedRequestId { get; set; }
 
-    // Навигационные свойства
-    public ICollection<CreatedHistory> CreatedHistories { get; set; } = new List<CreatedHistory>();
-    public ICollection<RequestHistory> RequestHistories { get; set; } = new List<RequestHistory>();
+  
+    //public ICollection<CreatedHistory> CreatedHistories { get; set; } = new List<CreatedHistory>();
+    public UserRequestHistory RequestData { get; set; }
 }

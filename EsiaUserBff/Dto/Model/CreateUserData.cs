@@ -6,7 +6,7 @@ namespace EsiaUserGenerator.Dto;
 public class CreateUserData
 {
     [JsonIgnore]
-    public Guid? RequestId { get; set; }
+    public Guid RequestId { get; set; }
     public EsiaUserInfo? EsiaUserInfo { get; set; }
     public EsiaAuthInfo?  EsiaAuthInfo { get; set; }
 }
