@@ -77,11 +77,11 @@ else
         public EsiaUserData Data { get; set; }
     }
 
-    protected override async void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         try
         {
-            base.OnInitialized();
+            await base.OnInitializedAsync();
             EsiaUserList = await Http.GetFromJsonAsync<EsiaUser[]>("/api/storage/commonUsers");
         }
         catch (Exception e)
