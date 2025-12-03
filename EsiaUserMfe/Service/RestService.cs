@@ -19,12 +19,12 @@ public class RestService : IApiClient
         return result;
     }
 
-    public async Task<CreateEsiaUserRespnonse> CreateEsiaUser(EsiaUserRequest requestData)
+    public async Task<CreateEsiaUserResponse> CreateEsiaUser(EsiaUserRequest requestData)
     {
         var result =
             await _httpClient.PostAsJsonAsync<EsiaUserRequest>(
                 new Uri("/api/users/start-user-create", UriKind.Relative), requestData);
-        return await result.Content.ReadFromJsonAsync<CreateEsiaUserRespnonse>();
+        return await result.Content.ReadFromJsonAsync<CreateEsiaUserResponse>();
     }
 
     public async Task<string> GetRequestStatus(Guid requestId)

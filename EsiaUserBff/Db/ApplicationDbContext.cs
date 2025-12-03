@@ -1,4 +1,4 @@
-using EsiaUserGenerator.Db.Configuration;
+
 using EsiaUserGenerator.Db.Models;
 using Microsoft.EntityFrameworkCore;
 

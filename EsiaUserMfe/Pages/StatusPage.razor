@@ -27,10 +27,11 @@
             CurrentStatus = "Заявка не найдена";
             return;
         }
-        RetryCount++;
+        
         _pollingTimer = new Timer(async _ =>
         {
             await UpdateCurrentStatus();
+            RetryCount++;
         }, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
     }
 

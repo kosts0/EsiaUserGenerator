@@ -13,7 +13,7 @@ public class RequestHistoryConfiguration : IEntityTypeConfiguration<UserRequestH
         builder.Property(x => x.JsonRequest)
             .IsRequired();
 
-        builder.HasMany(x => x.GeneratedPofiles)
+        builder.HasMany(x => x.GeneratedProfiles)
             .WithOne(x => x.RequestData)
             .HasForeignKey(x => x.CreatedRequestId);
     }
