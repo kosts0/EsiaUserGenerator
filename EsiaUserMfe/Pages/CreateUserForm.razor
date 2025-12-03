@@ -1,0 +1,119 @@
+﻿@page "/esia-user-form"
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components.Forms
+@inherits EsiaUserMfe.Components.EsiaFormBase
+
+<h3 class="text-2xl font-bold mb-4">Создание анкеты ESIA</h3>
+
+<EditForm Model="Model" OnValidSubmit="Submit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <!-- Блок персональных данных -->
+    <div class="p-4 border rounded mb-4">
+        <h4 class="text-xl font-semibold mb-3">Персональная информация</h4>
+
+        <div class="mb-3">
+            <label>Фамилия</label>
+            <InputText class="input" @bind-Value="Model.EsiaUserInfo.LastName" />
+        </div>
+
+        <div class="mb-3">
+            <label>Имя</label>
+            <InputText class="input" @bind-Value="Model.EsiaUserInfo.FirstName" />
+        </div>
+
+        <div class="mb-3">
+            <label>Пол</label>
+            <InputSelect class="input" @bind-Value="Model.EsiaUserInfo.Gender">
+                <option value="">Не выбран</option>
+                <option value="M">Мужской</option>
+                <option value="F">Женский</option>
+            </InputSelect>
+        </div>
+
+        <div class="mb-3">
+            <label>Дата рождения</label>
+            <InputDate class="input" @bind-Value="Model.EsiaUserInfo.BirthDate" />
+        </div>
+
+        <div class="mb-3">
+            <label>Место рождения</label>
+            <InputText class="input" @bind-Value="Model.EsiaUserInfo.BirthPlace" />
+        </div>
+
+        <div class="mb-3">
+            <label>Гражданство (ISO)</label>
+            <InputText class="input" @bind-Value="Model.EsiaUserInfo.Citizenship" />
+        </div>
+
+        <div class="mb-3">
+            <label>СНИЛС</label>
+            <InputText class="input" @bind-Value="Model.EsiaUserInfo.Snils" />
+            <span class="text-gray-400 text-sm">Формат: 000-000-000 00</span>
+        </div>
+    </div>
+
+    <!-- Блок паспорта -->
+    <div class="p-4 border rounded mb-4">
+        <h4 class="text-xl font-semibold mb-3">Паспорт</h4>
+
+        <div class="mb-3">
+            <label>Серия</label>
+            <InputText class="input" @bind-Value="Model.EsiaUserInfo.Passport.Series" />
+        </div>
+
+        <div class="mb-3">
+            <label>Номер</label>
+            <InputText class="input" @bind-Value="Model.EsiaUserInfo.Passport.Number" />
+        </div>
+
+        <div class="mb-3">
+            <label>Кем выдан</label>
+            <InputText class="input" @bind-Value="Model.EsiaUserInfo.Passport.IssuedBy" />
+        </div>
+
+        <div class="mb-3">
+            <label>Код подразделения</label>
+            <InputText class="input" @bind-Value="Model.EsiaUserInfo.Passport.IssueId" />
+            <span class="text-gray-400 text-sm">Формат: 000-000</span>
+        </div>
+
+        <div class="mb-3">
+            <label>Дата выдачи</label>
+            <InputDate class="input" @bind-Value="Model.EsiaUserInfo.Passport.IssueDate" />
+        </div>
+    </div>
+
+    <!-- Блок авторизации -->
+    <div class="p-4 border rounded mb-4">
+        <h4 class="text-xl font-semibold mb-3">Данные для входа</h4>
+
+        <div class="mb-3">
+            <label>Телефон</label>
+            <InputText class="input" @bind-Value="Model.AuthInfo.Phone" />
+            <span class="text-gray-400 text-sm">Формат: +7(999)9999999</span>
+        </div>
+
+        <div class="mb-3">
+            <label>Пароль</label>
+            <InputText type="password" class="input" @bind-Value="Model.AuthInfo.Password" />
+        </div>
+    </div>
+
+    <button class="px-4 py-2 bg-blue-600 text-white rounded">Отправить</button>
+</EditForm>
+
+@if (response != null)
+{
+    <pre class="mt-4 p-3 bg-gray-100 rounded">@response</pre>
+}
+
+<style>
+    .input {
+        width: 100%;
+        padding: 6px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+    }
+</style>

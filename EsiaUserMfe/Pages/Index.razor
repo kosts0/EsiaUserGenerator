@@ -1,14 +1,18 @@
 @using System.Globalization
 @using System.Net.Http.Json
+@using System.Text.Json
 @using System.Text.Json.Serialization
+@using EsiaUserMfe.Dto
+@using EsiaUserMfe.Service.Interface
 @using Microsoft.AspNetCore.Components.Web
-
+@inject IApiClient ApiClient
+@inject NavigationManager NavigationManager
 @page "/"
 
 
 <h3 class="text-2xl font-bold mb-4">Список пользователей ESIA</h3>
 
-@if (EsiaUserList == null || EsiaUserList.Length == 0)
+@if (EsiaUserList == null || !EsiaUserList.Any())
 {
     <p>Пользователи отсутствуют.</p>
 }
@@ -51,54 +55,28 @@ else
 }
 else
 {
-    <pre>@data</pre>
+    <pre>@JsonSerializer.Serialize(data)</pre>
 }
 
 @code {
-
-    public class EsiaUser
-    {
-        public string? Oid { get; set; }
-        public string? Login { get; set; }
-        public string? Password { get; set; }
-        public string? Status { get; set; }
-        public DateTime? DateTimeCreated { get; set; }
-    }
-    public EsiaUser[]? EsiaUserList { get; set; }
-    string? data;
-
-    private class RequestData
-    {
-        public class EsiaUserData
-        {
-            
-        }
-        [JsonPropertyName("data")]
-        public EsiaUserData Data { get; set; }
-    }
-
-    protected override async void OnInitialized()
+    public IEnumerable<EsiaUser>? EsiaUserList { get; set; }
+    CreateEsiaUserResponse? data;
+    protected override async Task OnInitializedAsync()
     {
         try
         {
-            base.OnInitialized();
-            EsiaUserList = await Http.GetFromJsonAsync<EsiaUser[]>("/api/storage/commonUsers");
+            await base.OnInitializedAsync();
+            EsiaUserList = await ApiClient.GetFreeEsiaUsers();
         }
         catch (Exception e)
         {
             EsiaUserList = null;
         }
     }
-
     async Task LoadData()
     {
-        var response = await Http.PostAsJsonAsync<RequestData>("/api/users/start-user-create", new RequestData()
-        {
-            Data = new()
-        });
-        data = await response.Content.ReadAsStringAsync();
+        data = await ApiClient.CreateEsiaUser(new EsiaUserRequest() { });
+        NavigationManager.NavigateTo($"/status/{data.RequestId}");
     }
 
-    [Inject]
-    public HttpClient Http { get; set; } = default!;
 }

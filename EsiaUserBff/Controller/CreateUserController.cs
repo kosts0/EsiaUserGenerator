@@ -1,3 +1,7 @@
+using System.Diagnostics;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using EsiaUserGenerator.Db.Models;
 using EsiaUserGenerator.Db.UoW;
 using EsiaUserGenerator.Dto;
 using EsiaUserGenerator.Dto.API;
@@ -32,8 +36,14 @@ public sealed class UsersController : ControllerBase
     public async Task<IActionResult> StartUserCreate([FromBody] CreateUserRequest req)
     {
         var requestId = Guid.NewGuid();
+        await _unitOfWork.RequestHistory.AddAsync(entity: new UserRequestHistory()
+        {
+            UserId = Guid.Empty,//todo: add auth
+            RequestId = requestId,
+            JsonRequest = JsonSerializer.Serialize(req)
+        });
+        await _unitOfWork.CompleteAsync();
         await _requestStatusStore.SetStatusAsync(requestId.ToString(), "Started");
-
         req.Data ??= new();
         req.Data.RequestId = requestId;
 
@@ -68,7 +78,7 @@ public sealed class UsersController : ControllerBase
     {
         req.Data ??= new CreateUserData();
         req.Data.GenarateDefaultValues();
-        req.Data.RequestId ??= Guid.NewGuid();
+        req.Data.RequestId = Guid.NewGuid();
         try
         {
             var result = await _esia.CreateUserAsync(req.Data, ct);

@@ -23,7 +23,7 @@ internal class Program
         
 
         builder.Services.AddScoped<IEsiaUserRepository, EsiaUserRepository>();
-        builder.Services.AddScoped<ICreatedHistoryRepository, CreatedHistoryRepository>();
+        //builder.Services.AddScoped<ICreatedHistoryRepository, CreatedHistoryRepository>();
         builder.Services.AddScoped<IRequestHistoryRepository, RequestHistoryRepository>();
         
         

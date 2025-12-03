@@ -3,6 +3,7 @@ using System;
 using EsiaUserGenerator.Db;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EsiaUserGenerator.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251126203816_OneUserToManyEsiaUserV2")]
+    partial class OneUserToManyEsiaUserV2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -77,7 +80,7 @@ namespace EsiaUserGenerator.Migrations
             modelBuilder.Entity("EsiaUserGenerator.Db.Models.EsiaUser", b =>
                 {
                     b.HasOne("EsiaUserGenerator.Db.Models.UserRequestHistory", "RequestData")
-                        .WithMany("GeneratedProfiles")
+                        .WithMany("GeneratedPofiles")
                         .HasForeignKey("CreatedRequestId");
 
                     b.Navigation("RequestData");
@@ -85,7 +88,7 @@ namespace EsiaUserGenerator.Migrations
 
             modelBuilder.Entity("EsiaUserGenerator.Db.Models.UserRequestHistory", b =>
                 {
-                    b.Navigation("GeneratedProfiles");
+                    b.Navigation("GeneratedPofiles");
                 });
 #pragma warning restore 612, 618
         }

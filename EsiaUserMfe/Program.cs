@@ -1,4 +1,6 @@
 using EsiaUserMfe;
+using EsiaUserMfe.Service;
+using EsiaUserMfe.Service.Interface;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -12,5 +14,6 @@ builder.Services.AddScoped(sp => new HttpClient
 {
     BaseAddress = new Uri(builder.Configuration["BffUrl"])
 });
+builder.Services.AddHttpClient<IApiClient, RestService>(client => client.BaseAddress =new Uri(builder.Configuration["BffUrl"]) ); 
 
 await builder.Build().RunAsync();

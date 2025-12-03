@@ -38,11 +38,3 @@ namespace EsiaUserGenerator.Dto.Model;
             }
         }
     }
-
-
-
-
-
-
-
-    
