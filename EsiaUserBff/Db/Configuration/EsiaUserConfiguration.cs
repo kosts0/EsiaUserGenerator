@@ -11,16 +11,13 @@ public class EsiaUserConfiguration : IEntityTypeConfiguration<EsiaUser>
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Oid).IsRequired(false);
-        builder.Property(x => x.Status).IsRequired(false);
         builder.Property(x => x.Login).IsRequired().HasMaxLength(256);
         builder.Property(x => x.Password).IsRequired();
 
-        /*builder.HasMany(x => x.CreatedHistories)
-            .WithOne(x => x.User)
-            .HasForeignKey(x => x.UserId);*/
-
-        /*builder.HasMany(x => x.RequestHistories)
-            .WithOne(x => x.User)
-            .HasForeignKey(x => x.UserId);*/
+        builder
+            .HasOne(e => e.RequestData)
+            .WithOne(r => r.User)
+            .HasForeignKey<EsiaUser>(e => e.CreatedRequestId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -2,9 +2,9 @@ using EsiaUserGenerator.Db.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-public class RequestHistoryConfiguration : IEntityTypeConfiguration<UserRequestHistory>
+public class RequestHistoryConfiguration : IEntityTypeConfiguration<RequestHistory>
 {
-    public void Configure(EntityTypeBuilder<UserRequestHistory> builder)
+    public void Configure(EntityTypeBuilder<RequestHistory> builder)
     {
         builder.ToTable("RequestHistory");
 
@@ -12,9 +12,6 @@ public class RequestHistoryConfiguration : IEntityTypeConfiguration<UserRequestH
 
         builder.Property(x => x.JsonRequest)
             .IsRequired();
-
-        builder.HasMany(x => x.GeneratedProfiles)
-            .WithOne(x => x.RequestData)
-            .HasForeignKey(x => x.CreatedRequestId);
+        
     }
 }

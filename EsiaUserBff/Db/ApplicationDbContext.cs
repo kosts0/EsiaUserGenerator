@@ -8,7 +8,7 @@ public class ApplicationDbContext : DbContext
 {
     public DbSet<EsiaUser> EsiaUsers => Set<EsiaUser>();
     //public DbSet<CreatedHistory> CreatedHistory => Set<CreatedHistory>();
-    public DbSet<UserRequestHistory> RequestHistory => Set<UserRequestHistory>();
+    public DbSet<RequestHistory> RequestHistory => Set<RequestHistory>();
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
