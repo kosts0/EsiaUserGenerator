@@ -14,7 +14,7 @@ namespace EsiaUserGenerator.Dto.Model;
         public string? Gender { get; set; }
         
         [JsonConverter(typeof(CustomDateTimeConverter))]
-        public DateTime? BirthDate { get; set; }
+        public DateTimeOffset? BirthDate { get; set; }
         
         public string? BirthPlace { get; set; }
         
@@ -25,12 +25,12 @@ namespace EsiaUserGenerator.Dto.Model;
         
         public class DocumentsInfo
         {
-            public Element[] Elements { get; set; }
+            public List<Element> Elements { get; set; }
             public class Element
             {
                 public string? Number { get; set; }
                 [JsonConverter(typeof(CustomDateTimeConverter))]
-                public DateTime? IssueDate { get; set; }
+                public DateTimeOffset? IssueDate { get; set; }
                 public string? Series { get; set; }
                 public string? Type { get; set; }
                 public string? IssueId { get; set; }

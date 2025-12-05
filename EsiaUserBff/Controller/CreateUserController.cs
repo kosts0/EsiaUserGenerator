@@ -14,7 +14,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace EsiaUserGenerator.Controller;
 
 [ApiController]
-[Route("api/users")]
+[Route("api/user")]
 public sealed class UsersController : ControllerBase
 {
     private readonly IEsiaRegistrationService _esia;
@@ -68,6 +68,7 @@ public sealed class UsersController : ControllerBase
             }
             finally
             {
+                (await uow.RequestHistory.GetByIdAsync(requestId)).Finished = true;
                 await uow.CompleteAsync();
             }
         });
@@ -76,46 +77,5 @@ public sealed class UsersController : ControllerBase
             RequestId = requestId,
             Status = "Queued"
         });
-    }
-    [Obsolete]
-    [HttpPost("create")]
-    public async Task<IActionResult> Create([FromBody] CreateUserRequest req, CancellationToken ct)
-    {
-        req.Data ??= new CreateUserData();
-        req.Data.GenarateDefaultValues();
-        req.Data.RequestId = Guid.NewGuid();
-        try
-        {
-            var result = await _esia.CreateUserAsync(req.Data, ct);
-            await _requestStatusStore.SetStatusAsync(req.Data.RequestId.ToString(), "Created");
-            return Ok(result);
-        }
-        catch (EsiaRequestException exception)
-        {
-            await _requestStatusStore.SetStatusAsync(req.Data.RequestId.ToString(),
-                $"EsiaRequestException: {exception.Message}");
-            return BadRequest(new CreateUserResult()
-            {
-                CodeStatus = "Esia integration error",
-                ExceptionMessage = exception.Message,
-                Code = 400,
-                Exception = exception
-            });
-        }
-        catch (System.Exception ex)
-        {
-            await _requestStatusStore.SetStatusAsync(req.Data.RequestId.ToString(), $"Exception: {ex.Message}");
-            return BadRequest(new CreateUserResult()
-            {
-                CodeStatus = "Internal error",
-                Code = 500,
-                ExceptionMessage = ex.Message,
-                Exception = ex
-            });
-        }
-        finally
-        {
-            await _unitOfWork.CompleteAsync();
-        }
     }
 }

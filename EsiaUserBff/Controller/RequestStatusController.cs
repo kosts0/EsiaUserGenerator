@@ -34,15 +34,16 @@ public class RequestStatusController : ControllerBase
             });
         }
 
-        return Ok(new StatusResponse()
+        return Ok(new 
         {
             Code = 200,
             CodeStatus = "Found",
-            Data = new StatusData()
+            Data = new 
             {
                 RequestId = historyResult.RequestId,
                 RequestJsonData = historyResult.JsonRequest,
-                CurrentStauts = historyResult.CurrentStatus
+                CurrentStauts = historyResult.CurrentStatus,
+                GeneratedData = historyResult.GeneratedUserInfo
             }
         });
     }

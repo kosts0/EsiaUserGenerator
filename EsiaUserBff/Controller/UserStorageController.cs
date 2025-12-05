@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace EsiaUserGenerator.Controller;
 
 [ApiController]
-[Route("/api/storage")]
+[Route("/api/user")]
 public class UserStorageController : ControllerBase
 {
     private IUnitOfWork  _unitOfWork;
@@ -16,7 +16,14 @@ public class UserStorageController : ControllerBase
     [HttpGet("commonUsers")]
     public async Task<IActionResult> GetFreeEsiaUsers()
     {
-        var result = await _unitOfWork.Users.GetAllAsync();
+        var result = await _unitOfWork.Users.GetAllLazyAsync();
+        
+        return Ok(result);
+    }
+    [HttpGet("/{id}")]
+    public async Task<IActionResult> GetUser(Guid id)
+    {
+        var result = await _unitOfWork.Users.GetByIdAsync(id);
         return Ok(result);
     }
 }
