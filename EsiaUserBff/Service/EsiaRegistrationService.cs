@@ -13,6 +13,7 @@ using System.Net;
 using System.Security.Cryptography;
 using EsiaUserGenerator.Db.Models;
 using EsiaUserGenerator.Db.UoW;
+using EsiaUserGenerator.Dto.Enum;
 
 namespace EsiaUserGenerator.Service;
 
@@ -21,15 +22,18 @@ public class EsiaRegistrationService : IEsiaRegistrationService
     private IRequestStatusStore _requestStatusStore;
     private ILoggerFactory _loggerFactory;
     private IUnitOfWork _unitOfWork;
+    private IUserProgressTracker _userProgressTracker;
     public EsiaRegistrationService(ILogger<EsiaRegistrationService> logger,  ILoggerFactory loggerFactory, 
         IRequestStatusStore requestStatusStore, 
-        IUnitOfWork uow)
+        IUnitOfWork uow,
+        IUserProgressTracker  userProgressTracker)
     { 
         _logger = logger;
         _loggerFactory = loggerFactory;
         _http = CreateClient();
         _requestStatusStore = requestStatusStore;
         _unitOfWork = uow;
+        _userProgressTracker = userProgressTracker;
         
     }
     //private CookieContainer cookieContainer = new CookieContainer();
@@ -78,55 +82,50 @@ public class EsiaRegistrationService : IEsiaRegistrationService
             Id = Guid.NewGuid(),
             Login = esiaUserInfo.EsiaAuthInfo.Phone,
             Password = esiaUserInfo.EsiaAuthInfo.Password,
-            DateTimeCreated = DateTime.UtcNow,
             CreatedRequestId = esiaUserInfo.RequestId
         };
-        /*if (mock)
-        {
-            esiaUserInfo.EsiaAuthInfo = new()
-            {
-                Phone = "+7(913)9882658",
-                Password = "Test123456!"
-            };
-            var oauth1 = await GetOauthEndpoint();
-            SetFollowRedirect(true);
-            await GoToOauth(oauth1);
-            SetFollowRedirect(false);
-            var loginUrl2 = await Login(esiaUserInfo.EsiaAuthInfo, ct);
-        }*/
+        
         await _unitOfWork.Users.AddAsync(esiaUserDb);
-        esiaUserDb.Status = nameof(PostInitDataAsync);
+        //esiaUserDb.Status = nameof(PostInitDataAsync);
+        await _userProgressTracker.SetStepAsync(esiaUserInfo.RequestId, UserCreationFlow.PostData);
         await _requestStatusStore.SetStatusAsync(requestId, nameof(PostInitDataAsync));
         await PostInitDataAsync(esiaUserInfo, ct);
         
-        esiaUserDb.Status = "Waiting sms";
+        //esiaUserDb.Status = "Waiting sms";
+        await _userProgressTracker.SetStepAsync(esiaUserInfo.RequestId, UserCreationFlow.WaitingSms);
         await _requestStatusStore.SetStatusAsync(requestId, $"Waiting sms. Phone: {esiaUserInfo.EsiaAuthInfo.Phone}");
         var sms = await RetryAsync.WhileNull(() => GetAuthSms(esiaUserInfo.EsiaAuthInfo.Phone),
             retries: 40, interval: TimeSpan.FromSeconds(5));
         
-        esiaUserDb.Status = "Confirm SMS";
+        //esiaUserDb.Status = "Confirm SMS";
+        await _userProgressTracker.SetStepAsync(esiaUserInfo.RequestId, UserCreationFlow.ConfirmSms);
         await _requestStatusStore.SetStatusAsync(requestId, $"Confirm SMS");
         await SetCode(sms);
 
-        esiaUserDb.Status = "Set password";
+        //esiaUserDb.Status = "Set password";
+        await _userProgressTracker.SetStepAsync(esiaUserInfo.RequestId, UserCreationFlow.PasswordSet);
         await _requestStatusStore.SetStatusAsync(requestId, $"Set password");
         await CreatePassword(esiaUserInfo, ct);
 
-        esiaUserDb.Status = "Authorization";
+        //esiaUserDb.Status = "Authorization";
+        await _userProgressTracker.SetStepAsync(esiaUserInfo.RequestId, UserCreationFlow.Authorization);
         await _requestStatusStore.SetStatusAsync(requestId, "Authorization");
         var oid = await Authorization(esiaUserInfo.EsiaAuthInfo, ct);
         esiaUserDb.Oid = oid;
         
-        esiaUserDb.Status = "Update person data";
+        //esiaUserDb.Status = "Update person data";
+        await _userProgressTracker.SetStepAsync(esiaUserInfo.RequestId, UserCreationFlow.PersonDataUpdate);
         await _requestStatusStore.SetStatusAsync(requestId, "Update person data");
         
         await UpdatePersonData(esiaUserInfo, ct);
 
-        esiaUserDb.Status = nameof(SetPostmailConfirmation);
+        //esiaUserDb.Status = nameof(SetPostmailConfirmation);
+        await _userProgressTracker.SetStepAsync(esiaUserInfo.RequestId, UserCreationFlow.PostmailConfirmation);
         await _requestStatusStore.SetStatusAsync(requestId, nameof(SetPostmailConfirmation));
         await SetPostmailConfirmation(esiaUserInfo.EsiaAuthInfo,ct);
 
-        esiaUserDb.Status = "Wait postmail code";
+        //esiaUserDb.Status = "Wait postmail code";
+        await _userProgressTracker.SetStepAsync(esiaUserInfo.RequestId, UserCreationFlow.PostmailWaiting);
         await _requestStatusStore.SetStatusAsync(requestId, "Wait postmail code");
         await GetPostCodes(ct);
         
@@ -136,7 +135,8 @@ public class EsiaRegistrationService : IEsiaRegistrationService
             return GetPostCode(esiaUserInfo.EsiaUserInfo.Snils, ct);
         }, retries: 30, interval: TimeSpan.FromSeconds(5));
 
-        esiaUserDb.Status = "Confirm postmail code";
+        //esiaUserDb.Status = "Confirm postmail code";
+        //await _userProgressTracker.SetStepAsync(esiaUserInfo.RequestId, UserCreationFlow.PostmailConfirmation);
         await _requestStatusStore.SetStatusAsync(requestId, "Confirm postmail code");
         await ConfirmPostal(postalCode, ct);
         result.Data = new()
@@ -144,8 +144,8 @@ public class EsiaRegistrationService : IEsiaRegistrationService
             EsiaUser = esiaUserDb
         };
         result.CodeStatus = "Created";
-        esiaUserDb.Status = "Created";
-        
+        //esiaUserDb.Status = "Created";
+        await _userProgressTracker.SetStepAsync(esiaUserInfo.RequestId, UserCreationFlow.Completed);
         
         _logger.LogInformation("User created successfully with UserId={UserId}", result.Data.EsiaUser.Id);
         return result;

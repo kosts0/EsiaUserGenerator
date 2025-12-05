@@ -7,15 +7,11 @@ public class EsiaUser
     public Guid Id { get; set; }
     
     public string? Oid { get; set; }
-    public string? Status { get; set; }
-    public DateTime DateTimeCreated { get; set; }
 
     public string? Login { get; set; }
     public string? Password { get; set; }
 
     public Guid? CreatedRequestId { get; set; }
 
-  
-    //public ICollection<CreatedHistory> CreatedHistories { get; set; } = new List<CreatedHistory>();
-    public UserRequestHistory RequestData { get; set; }
+    public RequestHistory RequestData { get; set; } = null!;
 }

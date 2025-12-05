@@ -37,6 +37,7 @@ internal class Program
        
         builder.Services.AddScoped<IEsiaRegistrationService, EsiaRegistrationService>();
         builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+        builder.Services.AddScoped<IUserProgressTracker, DbUserProgressTracker>();
         //redis
         builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
             ConnectionMultiplexer.Connect("localhost:6379")
