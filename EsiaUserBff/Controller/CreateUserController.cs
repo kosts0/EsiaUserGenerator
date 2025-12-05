@@ -5,6 +5,7 @@ using EsiaUserGenerator.Db.Models;
 using EsiaUserGenerator.Db.UoW;
 using EsiaUserGenerator.Dto;
 using EsiaUserGenerator.Dto.API;
+using EsiaUserGenerator.Dto.Enum;
 using EsiaUserGenerator.Exception;
 using EsiaUserGenerator.Service.Interface;
 using EsiaUserGenerator.Utils;
@@ -21,29 +22,33 @@ public sealed class UsersController : ControllerBase
     ILogger<UsersController> _logger;
     private IBackgroundTaskQueue _taskQueue;
     private IUnitOfWork  _unitOfWork;
+    private IUserProgressTracker _userProgressTracker;
     public UsersController(IEsiaRegistrationService esia, IRequestStatusStore requestStatusStore, ILogger<UsersController> logger,
         IBackgroundTaskQueue taskQueue,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IUserProgressTracker  userProgressTracker)
     {
         _esia = esia;
         _requestStatusStore = requestStatusStore;
         _logger = logger;
         _taskQueue = taskQueue;
         _unitOfWork = unitOfWork;
+        _userProgressTracker = userProgressTracker;
     }
 
     [HttpPost("start-user-create")]
     public async Task<IActionResult> StartUserCreate([FromBody] CreateUserRequest req)
     {
         var requestId = Guid.NewGuid();
-        await _unitOfWork.RequestHistory.AddAsync(entity: new UserRequestHistory()
+        await _unitOfWork.RequestHistory.AddAsync(entity: new RequestHistory()
         {
-            UserId = Guid.Empty,//todo: add auth
             RequestId = requestId,
-            JsonRequest = JsonSerializer.Serialize(req)
+            JsonRequest = JsonSerializer.Serialize(req),
+            CurrentStatus = nameof(UserCreationFlow.Queued),
+            DateTimeCreated = DateTime.UtcNow,
         });
         await _unitOfWork.CompleteAsync();
-        await _requestStatusStore.SetStatusAsync(requestId.ToString(), "Started");
+        await _userProgressTracker.SetStepAsync(requestId, UserCreationFlow.Queued);
         req.Data ??= new();
         req.Data.RequestId = requestId;
 
@@ -72,7 +77,7 @@ public sealed class UsersController : ControllerBase
             Status = "Queued"
         });
     }
-
+    [Obsolete]
     [HttpPost("create")]
     public async Task<IActionResult> Create([FromBody] CreateUserRequest req, CancellationToken ct)
     {

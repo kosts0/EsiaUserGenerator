@@ -1,3 +1,5 @@
+using Newtonsoft.Json;
+
 namespace EsiaUserGenerator.Dto.API;
 
 public abstract class ResponceBase<TResponseData>
@@ -6,6 +8,7 @@ public abstract class ResponceBase<TResponseData>
     public string? CodeStatus { get; set; }
     public TResponseData Data { get; set; }
     public string? ExceptionMessage { get; set; }
+    [JsonIgnore]
     public  System.Exception Exception { get; set; }
     
     
