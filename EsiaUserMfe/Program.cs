@@ -1,3 +1,6 @@
+using Blazorise;
+using Blazorise.Bootstrap5;
+using Blazorise.Icons.FontAwesome;
 using EsiaUserMfe;
 using EsiaUserMfe.Service;
 using EsiaUserMfe.Service.Interface;
@@ -14,6 +17,15 @@ builder.Services.AddScoped(sp => new HttpClient
 {
     BaseAddress = new Uri(builder.Configuration["BffUrl"])
 });
+
+
+builder.Services
+    .AddBlazorise( options =>
+    {
+        options.Immediate = true;
+    } )
+    .AddBootstrap5Providers()
+    .AddFontAwesomeIcons();
 builder.Services.AddHttpClient<IApiClient, RestService>(client => client.BaseAddress =new Uri(builder.Configuration["BffUrl"]) ); 
 
 await builder.Build().RunAsync();

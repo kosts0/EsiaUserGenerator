@@ -15,7 +15,7 @@ public class RestService : IApiClient
     }
     public async Task<IEnumerable<EsiaUser>> GetFreeEsiaUsers()
     {
-        var result = await _httpClient.GetFromJsonAsync<IEnumerable<EsiaUser>>("/api/storage/commonUsers");
+        var result = await _httpClient.GetFromJsonAsync<IEnumerable<EsiaUser>>("/api/user/commonUsers");
         return result;
     }
 

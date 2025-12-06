@@ -7,56 +7,57 @@
 @using Microsoft.AspNetCore.Components.Web
 @inject IApiClient ApiClient
 @inject NavigationManager NavigationManager
+@using Blazorise
 @page "/"
 
 
 <h3 class="text-2xl font-bold mb-4">Список пользователей ESIA</h3>
 
-@if (EsiaUserList == null || !EsiaUserList.Any())
-{
-    <p>Пользователи отсутствуют.</p>
-}
-else
-{
-    <div class="overflow-x-auto">
-        <table class="min-w-full border border-gray-300 divide-y divide-gray-200">
-            <thead class="bg-gray-100">
-            <tr>
-                <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">OID</th>
-                <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Login</th>
-                <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Password</th>
-                <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Текущий статус</th>
-                <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Дата создания</th>
-            </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-            @foreach (var user in EsiaUserList)
+<Table>
+    <TableHeader ThemeContrast="ThemeContrast.Light">
+        <TableRow>
+            <TableHeaderCell>#</TableHeaderCell>
+            <TableHeaderCell>OID</TableHeaderCell>
+            <TableHeaderCell>Логин</TableHeaderCell>
+            <TableHeaderCell>Пароль</TableHeaderCell>
+            <TableHeaderCell>Данные профиля</TableHeaderCell>
+        </TableRow>
+    </TableHeader>
+    <TableBody>
+        @if (EsiaUserList == null || !EsiaUserList.Any())
+        {
+            <TableRowCell Colspan="5">Пользователи отсутствуют.</TableRowCell>
+        }
+        else
+        {
+            
+            @foreach (var user in EsiaUserList.Select((user,index) => (user, index)))
             {
-                <tr>
-                    <td class="px-4 py-2">@user.Oid</td>
-                    <td class="px-4 py-2">@user.Login</td>
-                    <td class="px-4 py-2">@user.Password</td>
-                    <td class="px-4 py-2">@user.Status</td>
-                    <td class="px-4 py-2">@user.DateTimeCreated?.ToString("g", CultureInfo.CurrentCulture)</td>
-                </tr>
+                <TableRow>
+                    <TableRowCell>@user.index</TableRowCell>
+                    <TableRowCell>@user.user.Oid</TableRowCell>
+                    <TableRowCell>@user.user.Login</TableRowCell>
+                    <TableRowCell>@user.user.Password</TableRowCell>
+                    @if (user.user.RequestData == null ||
+                         user.user.RequestData.GetValueKind() == JsonValueKind.Null || 
+                         user.user.RequestData?["generatedUserInfo"] == null ||
+                         user.user.RequestData?["generatedUserInfo"].GetValueKind() == JsonValueKind.Null)
+                    {
+                        <TableRowCell>Нет информации</TableRowCell>
+                    }
+                    else
+                    {
+                        <TableRowCell>@user.user.RequestData.ToJsonString()</TableRowCell>
+                    }
+                </TableRow>    
             }
-            </tbody>
-        </table>
-    </div>
-}
-<h3>Пример вызова API</h3>
-
-<button @onclick="LoadData">Загрузить</button>
-
-@if (data is null)
-{
+        }
+    </TableBody>
     
-    <p>Нет данных</p>
-}
-else
-{
-    <pre>@JsonSerializer.Serialize(data)</pre>
-}
+</Table>
+
+
+<Button @onclick="CreateProfile">Создать ESIA-профиль</Button>
 
 @code {
     public IEnumerable<EsiaUser>? EsiaUserList { get; set; }
@@ -73,7 +74,7 @@ else
             EsiaUserList = null;
         }
     }
-    async Task LoadData()
+    async Task CreateProfile()
     {
         data = await ApiClient.CreateEsiaUser(new EsiaUserRequest() { });
         NavigationManager.NavigateTo($"/status/{data.RequestId}");
