@@ -1,73 +1,71 @@
-@using System.Globalization
-@using System.Net.Http.Json
 @using System.Text.Json
-@using System.Text.Json.Serialization
 @using EsiaUserMfe.Dto
 @using EsiaUserMfe.Service.Interface
 @using Microsoft.AspNetCore.Components.Web
 @inject IApiClient ApiClient
 @inject NavigationManager NavigationManager
-@using Blazorise
+
 @page "/"
 
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-6">
+    <MudPaper Elevation="2" Class="p-6">
+    <MudText Typo="Typo.h5" Class="mb-4">Список пользователей ESIA</MudText>
+    @if (EsiaUserList == null)
+    {
+        <MudProgressCircular Color="Color.Primary" Class="m-4" />
+    }
+    else
+    {
+        <MudTable Items="EsiaUserList?.Select((u, i) => (u, i))"
+                  Hover="true" Breakpoint="Breakpoint.Sm"
+                  Loading="_loading"
+                  LoadingProgressColor="Color.Info"
+                  Dense="false"
+                  Bordered="false"
+                  Striped="true">
+            <HeaderContent>
+                <MudTh>#</MudTh>
+                <MudTh>OID</MudTh>
+                <MudTh>Логин</MudTh>
+                <MudTh>Пароль</MudTh>
+                <MudTh>Данные профиля</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.i</MudTd>
+                <MudTd DataLabel="OID">@context.u.Oid</MudTd>
+                <MudTd DataLabel="Логин">@context.u.Login</MudTd>
+                <MudTd DataLabel="Пароль">@context.u.Password</MudTd>
+                <MudTd DataLabel="Данные профиля">
+                    @((context.u.RequestData == null ||
+                       context.u.RequestData.GetValueKind() == JsonValueKind.Null ||
+                       context.u.RequestData["generatedUserInfo"] == null ||
+                       context.u.RequestData["generatedUserInfo"]?.GetValueKind() == JsonValueKind.Null)
+                        ? "Нет информации"
+                        : @context.u.RequestData?["generatedUserInfo"].ToJsonString(new JsonSerializerOptions
+                        {
+                            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                            WriteIndented = true
+                        }))
+                </MudTd>
+            </RowTemplate>
 
-<h3 class="text-2xl font-bold mb-4">Список пользователей ESIA</h3>
+        </MudTable>
+    }
 
-<Table>
-    <TableHeader ThemeContrast="ThemeContrast.Light">
-        <TableRow>
-            <TableHeaderCell>#</TableHeaderCell>
-            <TableHeaderCell>OID</TableHeaderCell>
-            <TableHeaderCell>Логин</TableHeaderCell>
-            <TableHeaderCell>Пароль</TableHeaderCell>
-            <TableHeaderCell>Данные профиля</TableHeaderCell>
-        </TableRow>
-    </TableHeader>
-    <TableBody>
-        @if (EsiaUserList == null || !EsiaUserList.Any())
-        {
-            <TableRowCell Colspan="5">Пользователи отсутствуют.</TableRowCell>
-        }
-        else
-        {
-            
-            @foreach (var user in EsiaUserList.Select((user,index) => (user, index)))
-            {
-                <TableRow>
-                    <TableRowCell>@user.index</TableRowCell>
-                    <TableRowCell>@user.user.Oid</TableRowCell>
-                    <TableRowCell>@user.user.Login</TableRowCell>
-                    <TableRowCell>@user.user.Password</TableRowCell>
-                    @if (user.user.RequestData == null ||
-                         user.user.RequestData.GetValueKind() == JsonValueKind.Null || 
-                         user.user.RequestData?["generatedUserInfo"] == null ||
-                         user.user.RequestData?["generatedUserInfo"].GetValueKind() == JsonValueKind.Null)
-                    {
-                        <TableRowCell>Нет информации</TableRowCell>
-                    }
-                    else
-                    {
-                        <TableRowCell>@user.user.RequestData.ToJsonString()</TableRowCell>
-                    }
-                </TableRow>    
-            }
-        }
-    </TableBody>
-    
-</Table>
-
-
-<Button @onclick="CreateProfile">Создать ESIA-профиль</Button>
-
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" OnClick="CreateProfile">Создать ESIA-профиль</MudButton> 
+    </MudPaper>
+</MudContainer>
 @code {
     public IEnumerable<EsiaUser>? EsiaUserList { get; set; }
     CreateEsiaUserResponse? data;
+    private bool _loading = true;
     protected override async Task OnInitializedAsync()
     {
         try
         {
             await base.OnInitializedAsync();
             EsiaUserList = await ApiClient.GetFreeEsiaUsers();
+            _loading = false;
         }
         catch (Exception e)
         {
