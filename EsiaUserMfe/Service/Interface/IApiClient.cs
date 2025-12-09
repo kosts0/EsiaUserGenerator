@@ -6,5 +6,5 @@ public interface IApiClient
 {
     public Task<IEnumerable<EsiaUser>> GetFreeEsiaUsers();
     public Task<CreateEsiaUserResponse> CreateEsiaUser(EsiaUserRequest requestData);
-    public Task<string> GetRequestStatus(Guid requestId);
+    public Task<StatusResponse> GetRequestStatus(Guid requestId);
 }

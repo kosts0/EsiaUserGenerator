@@ -23,18 +23,17 @@ public class RestService : IApiClient
     {
         var result =
             await _httpClient.PostAsJsonAsync<EsiaUserRequest>(
-                new Uri("/api/users/start-user-create", UriKind.Relative), requestData);
+                new Uri("/api/user/start-user-create", UriKind.Relative), requestData);
         return await result.Content.ReadFromJsonAsync<CreateEsiaUserResponse>();
     }
 
-    public async Task<string> GetRequestStatus(Guid requestId)
+    public async Task<StatusResponse> GetRequestStatus(Guid requestId)
     {
-        var response = await _httpClient.GetAsync($"/status/{requestId}");
+        var response = await _httpClient.GetFromJsonAsync<StatusResponse>($"/status/{requestId}");
 
-        if (response.StatusCode == HttpStatusCode.NotFound)
+        if (response?.Code != 200)
             return null;
 
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadAsStringAsync();
+        return response;
     }
 }

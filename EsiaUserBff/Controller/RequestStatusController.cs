@@ -42,7 +42,7 @@ public class RequestStatusController : ControllerBase
             {
                 RequestId = historyResult.RequestId,
                 RequestJsonData = historyResult.JsonRequest,
-                CurrentStauts = historyResult.CurrentStatus,
+                CurrentStatus = historyResult.CurrentStatus,
                 GeneratedData = historyResult.GeneratedUserInfo
             }
         });
