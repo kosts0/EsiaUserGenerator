@@ -43,7 +43,8 @@
         <!-- JSON generatedData -->
         <MudText Typo="Typo.h6">GeneratedData (JSON)</MudText>
 
-        <MudTextField Value="@GeneratedJson"
+        <MudTextField T="string" 
+                      Value="@GeneratedJson"
                       ValueChanged="OnJsonEditAttempt"
                       Lines="12"
                       FullWidth="true"

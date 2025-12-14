@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace EsiaUserGenerator.Controller;
 
 [ApiController]
-[Route("status")]
+[Route("/api/status")]
 public class RequestStatusController : ControllerBase
 {
     private readonly IRequestStatusStore _store;

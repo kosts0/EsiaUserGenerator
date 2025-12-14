@@ -29,7 +29,7 @@ public class RestService : IApiClient
 
     public async Task<StatusResponse> GetRequestStatus(Guid requestId)
     {
-        var response = await _httpClient.GetFromJsonAsync<StatusResponse>($"/status/{requestId}");
+        var response = await _httpClient.GetFromJsonAsync<StatusResponse>($"/api/status/{requestId}");
 
         if (response?.Code != 200)
             return null;
