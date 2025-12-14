@@ -1,13 +1,15 @@
-@using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Routing
+@using MudBlazor
+<MudThemeProvider />
 
+<MudDialogProvider />
+<MudSnackbarProvider />
 
 <Router AppAssembly="@typeof(App).Assembly">
     <Found Context="routeData">
         <RouteView RouteData="@routeData" />
     </Found>
-
     <NotFound>
-        <p>Page not found</p>
+        <MudText>Page not found</MudText>
     </NotFound>
 </Router>

@@ -31,7 +31,11 @@ internal class Program
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
-        builder.Services.AddControllers();
+        builder.Services.AddControllers().AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.Encoder =
+                System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
+        });;
         builder.Services.AddHttpClient();
         builder.Services.AddTransient<LoggingHandler>();
        
@@ -57,7 +61,7 @@ internal class Program
                 app.UseSwagger();
                 app.UseSwaggerUI();
                 // Disable CORS since angular will be running on port 4200 and the service on port 5258.
-                app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+                //app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
             }
             else
             {

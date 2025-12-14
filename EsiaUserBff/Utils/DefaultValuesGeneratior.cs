@@ -24,7 +24,7 @@ public static class DefaultValuesGeneratior
         data.EsiaAuthInfo.Password ??= "Test123456!";
         data.EsiaUserInfo.Documents ??= new EsiaUserInfo.DocumentsInfo()
         {
-            Elements = new []
+            Elements = new List<EsiaUserInfo.DocumentsInfo.Element>()
             {
                 new EsiaUserInfo.DocumentsInfo.Element()
                 {

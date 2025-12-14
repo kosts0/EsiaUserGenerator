@@ -82,9 +82,10 @@ public class EsiaRegistrationService : IEsiaRegistrationService
             Id = Guid.NewGuid(),
             Login = esiaUserInfo.EsiaAuthInfo.Phone,
             Password = esiaUserInfo.EsiaAuthInfo.Password,
-            CreatedRequestId = esiaUserInfo.RequestId
+            CreatedRequestId = esiaUserInfo.RequestId,
+            RequestData = await _unitOfWork.RequestHistory.GetByIdAsync(esiaUserInfo.RequestId)
         };
-        
+        if (esiaUserDb.RequestData != null) esiaUserDb.RequestData.GeneratedUserInfo = esiaUserInfo.EsiaUserInfo;
         await _unitOfWork.Users.AddAsync(esiaUserDb);
         //esiaUserDb.Status = nameof(PostInitDataAsync);
         await _userProgressTracker.SetStepAsync(esiaUserInfo.RequestId, UserCreationFlow.PostData);

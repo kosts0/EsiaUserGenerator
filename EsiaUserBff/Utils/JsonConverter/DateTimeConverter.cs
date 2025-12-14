@@ -4,7 +4,7 @@ namespace EsiaUserGenerator.Utils.JsonConverter;
 using System.Text.Json.Serialization;
 using System.Globalization;
 
-   public class CustomDateTimeConverter : JsonConverter<DateTime?>
+   public class CustomDateTimeConverter : JsonConverter<DateTimeOffset?>
 {
     private const string _format = "dd.MM.yyyy";
 
@@ -12,7 +12,7 @@ using System.Globalization;
     {
     }
 
-    public override DateTime? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override DateTimeOffset? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         // Read the string value from the JSON
         string dateString = reader.GetString();
@@ -20,7 +20,7 @@ using System.Globalization;
         return DateTime.ParseExact(dateString, _format, CultureInfo.InvariantCulture);
     }
 
-    public override void Write(Utf8JsonWriter writer, DateTime? value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, DateTimeOffset? value, JsonSerializerOptions options)
     {
         // Format the DateTime value into a string using the specified format
         if (value.HasValue)

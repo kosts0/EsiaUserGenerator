@@ -3,6 +3,7 @@ using System;
 using EsiaUserGenerator.Db;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EsiaUserGenerator.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251205211954_AddEsiaInfoGeneratedData")]
+    partial class AddEsiaInfoGeneratedData
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -96,7 +99,7 @@ namespace EsiaUserGenerator.Migrations
                             b1.Property<Guid>("RequestHistoryRequestId")
                                 .HasColumnType("uuid");
 
-                            b1.Property<DateTimeOffset?>("BirthDate")
+                            b1.Property<DateTime?>("BirthDate")
                                 .HasColumnType("timestamp with time zone");
 
                             b1.Property<string>("BirthPlace")
@@ -147,7 +150,7 @@ namespace EsiaUserGenerator.Migrations
                                                 .ValueGeneratedOnAdd()
                                                 .HasColumnType("integer");
 
-                                            b3.Property<DateTimeOffset?>("IssueDate")
+                                            b3.Property<DateTime?>("IssueDate")
                                                 .HasColumnType("timestamp with time zone");
 
                                             b3.Property<string>("IssueId")

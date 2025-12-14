@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace EsiaUserGenerator.Controller;
 
 [ApiController]
-[Route("status")]
+[Route("/api/status")]
 public class RequestStatusController : ControllerBase
 {
     private readonly IRequestStatusStore _store;
@@ -34,15 +34,16 @@ public class RequestStatusController : ControllerBase
             });
         }
 
-        return Ok(new StatusResponse()
+        return Ok(new 
         {
             Code = 200,
             CodeStatus = "Found",
-            Data = new StatusData()
+            Data = new 
             {
                 RequestId = historyResult.RequestId,
                 RequestJsonData = historyResult.JsonRequest,
-                CurrentStauts = historyResult.CurrentStatus
+                CurrentStatus = historyResult.CurrentStatus,
+                GeneratedData = historyResult.GeneratedUserInfo
             }
         });
     }

@@ -1,47 +1,118 @@
 @page "/status/{RequestId}"
+@using System.Text.Json
+@using EsiaUserMfe.Dto
 @using EsiaUserMfe.Service.Interface
-@inject IApiClient ApiCLient
-<h3>StatusPage</h3>
+@using MudBlazor
+@inject IApiClient ApiClient
+@inject ISnackbar Snackbar
 
-<p>Текущий статус заявки: @CurrentStatus. Повторений: @RetryCount</p>
+<MudPaper Class="p-6 mt-4 mx-auto" Style="max-width:700px">
+
+    <MudText Typo="Typo.h4" Class="mb-2">Статус обработки</MudText>
+
+    @if (IsLoading)
+    {
+        <div class="d-flex justify-center my-5">
+            <MudProgressCircular Size="Size.Large" Indeterminate Color="Color.Primary" />
+        </div>
+    }
+    @if (Status == null)
+    {
+        <MudAlert Severity="Severity.Error">Заявка не найдена</MudAlert>
+    }
+    else
+    {
+        <!-- Линия статуса -->
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudText Typo="Typo.h6">Текущий статус:</MudText>
+            <MudChip T="StatusResponse" Color="@ChipColor" Variant="Variant.Filled">
+                @Status.Data.CurrentStatus
+            </MudChip>
+        </MudStack>
+
+        <MudDivider Class="my-4" />
+
+        <!-- Общая информация -->
+        <MudText Typo="Typo.h6">Информация о заявке</MudText>
+        <table class="mud-table-root mud-elevation-0" style="width:100%">
+            <tr><td><b>Код</b></td><td>@Status.Code (@Status.CodeStatus)</td></tr>
+        </table>
+
+        <MudDivider Class="my-4" />
+
+        <!-- JSON generatedData -->
+        <MudText Typo="Typo.h6">GeneratedData (JSON)</MudText>
+
+        <MudTextField T="string" 
+                      Value="@GeneratedJson"
+                      ValueChanged="OnJsonEditAttempt"
+                      Lines="12"
+                      FullWidth="true"
+                      Variant="Variant.Outlined" />
+
+    }
+</MudPaper>
 
 @code {
-    private Timer _pollingTimer;
     [Parameter] public string? RequestId { get; set; }
 
-    private Guid _requestId;
-    public int RetryCount = 0;
+    private StatusResponse? Status;
+    private bool IsLoading = true;
+    private Timer? PollTimer;
 
-    private string CurrentStatus;
+    // JSON строка, которую показываем пользователю
+    private string GeneratedJson = string.Empty;
+
     protected override async Task OnInitializedAsync()
     {
-        await base.OnInitializedAsync();
-        Guid.TryParse(RequestId, out _requestId);
+        Guid.TryParse(RequestId, out var id);
 
-            CurrentStatus = await ApiCLient.GetRequestStatus(_requestId);
+        await LoadStatus(id);
 
-
-
-        if (string.IsNullOrEmpty(CurrentStatus))
+        PollTimer = new Timer(async _ =>
         {
-            CurrentStatus = "Заявка не найдена";
-            return;
+            await LoadStatus(id);
+            await InvokeAsync(StateHasChanged);
+        }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+    }
+
+    private async Task LoadStatus(Guid id)
+    {
+        Status = await ApiClient.GetRequestStatus(id);
+
+        if (Status?.Data.GeneratedData != null)
+        {
+            GeneratedJson = JsonSerializer.Serialize(
+                Status.Data.GeneratedData,
+                new JsonSerializerOptions { WriteIndented = true }
+            );
         }
-        
-        _pollingTimer = new Timer(async _ =>
-        {
-            await UpdateCurrentStatus();
-            RetryCount++;
-        }, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+
+        IsLoading = Status is null || Status.Data.CurrentStatus != "Completed";
     }
 
-    private async Task UpdateCurrentStatus()
+    private Color ChipColor =>
+        Status?.Data.CurrentStatus switch
+        {
+            "Completed" => Color.Success,
+            "Canceled" => Color.Error,
+            "PostData" => Color.Info,
+            _ => Color.Default
+        };
+    /// <summary>
+    /// Попытка изменения json
+    /// </summary>
+    /// <param name="newValue"></param>
+    private async Task OnJsonEditAttempt(string newValue)
     {
-        CurrentStatus = await ApiCLient.GetRequestStatus(_requestId);
+        Snackbar.Add("Редактирование данных пока недоступно — функционал в разработке.", Severity.Info);
+
+        // откат
+        GeneratedJson = JsonSerializer.Serialize(
+            Status!.Data.GeneratedData,
+            new JsonSerializerOptions { WriteIndented = true }
+        );
+
         await InvokeAsync(StateHasChanged);
-    }
-    public void Dispose()
-    {
-        _pollingTimer?.Dispose();
     }
 }

@@ -1,3 +1,5 @@
+using System.Text.Json.Nodes;
+
 namespace EsiaUserMfe.Dto;
 
 public class EsiaUser
@@ -7,4 +9,5 @@ public class EsiaUser
     public string? Password { get; set; }
     public string? Status { get; set; }
     public DateTime? DateTimeCreated { get; set; }
+    public JsonNode RequestData { get; set; }
 }
