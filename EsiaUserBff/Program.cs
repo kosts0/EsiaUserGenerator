@@ -73,7 +73,8 @@ internal class Program
             app.MapControllers();
 
 
-
+            Console.WriteLine("ENV = " + builder.Environment.EnvironmentName);
+            Console.WriteLine("CS = " + builder.Configuration.GetConnectionString("DefaultConnection"));
             using (var scope = app.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();

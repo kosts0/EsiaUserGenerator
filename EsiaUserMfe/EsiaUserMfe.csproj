@@ -9,6 +9,7 @@
         <UseBlazorWebAssembly>true</UseBlazorWebAssembly>
         <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
         <BlazorWebAssemblyEnableDebugging>true</BlazorWebAssemblyEnableDebugging>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     
     </PropertyGroup>
 
@@ -29,6 +30,9 @@
       </Content>
       <Content Update="Pages\Index.razor">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\.dockerignore">
+        <Link>.dockerignore</Link>
       </Content>
     </ItemGroup>
 
