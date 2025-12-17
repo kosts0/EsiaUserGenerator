@@ -13,26 +13,28 @@ namespace EsiaUserGenerator.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            using var db = new ApplicationDbContextFactory().CreateDbContext();
+            // 1. Чистим битые ссылки CreatedRequestId
+            migrationBuilder.Sql("""
+                                     UPDATE "EsiaUsers" u
+                                     SET "CreatedRequestId" = NULL
+                                     WHERE "CreatedRequestId" IS NOT NULL
+                                       AND NOT EXISTS (
+                                           SELECT 1
+                                           FROM "RequestHistory" r
+                                           WHERE r."RequestId" = u."CreatedRequestId"
+                                       );
+                                 """);
 
-            var invalidUsers = db.EsiaUsers
-                .Where(u => u.CreatedRequestId != null &&
-                            !db.RequestHistory.Any(r => r.RequestId == u.CreatedRequestId))
-                .ToList();
-
-            foreach (var u in invalidUsers)
-            {
-                u.CreatedRequestId = null;
-            }
-
-            db.SaveChanges();
+            // 2. Удаляем старый FK
             migrationBuilder.DropForeignKey(
                 name: "FK_RequestHistory_EsiaUsers_UserId",
                 table: "RequestHistory");
 
+            // 3. Удаляем промежуточную таблицу
             migrationBuilder.DropTable(
                 name: "CreatedHistory");
 
+            // 4. Меняем PK у RequestHistory
             migrationBuilder.DropPrimaryKey(
                 name: "PK_RequestHistory",
                 table: "RequestHistory");
@@ -42,17 +44,21 @@ namespace EsiaUserGenerator.Migrations
                 table: "RequestHistory",
                 column: "RequestId");
 
+            // 5. Индекс для FK
             migrationBuilder.CreateIndex(
                 name: "IX_EsiaUsers_CreatedRequestId",
                 table: "EsiaUsers",
                 column: "CreatedRequestId");
 
+            // 6. Новый FK
             migrationBuilder.AddForeignKey(
                 name: "FK_EsiaUsers_RequestHistory_CreatedRequestId",
                 table: "EsiaUsers",
                 column: "CreatedRequestId",
                 principalTable: "RequestHistory",
-                principalColumn: "RequestId");
+                principalColumn: "RequestId",
+                onDelete: ReferentialAction.SetNull
+            );
         }
 
         /// <inheritdoc />
@@ -62,13 +68,13 @@ namespace EsiaUserGenerator.Migrations
                 name: "FK_EsiaUsers_RequestHistory_CreatedRequestId",
                 table: "EsiaUsers");
 
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_RequestHistory",
-                table: "RequestHistory");
-
             migrationBuilder.DropIndex(
                 name: "IX_EsiaUsers_CreatedRequestId",
                 table: "EsiaUsers");
+
+            migrationBuilder.DropPrimaryKey(
+                name: "PK_RequestHistory",
+                table: "RequestHistory");
 
             migrationBuilder.AddPrimaryKey(
                 name: "PK_RequestHistory",

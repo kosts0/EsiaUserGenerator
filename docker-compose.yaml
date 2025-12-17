@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  frontend:
+    build: ./EsiaUserMfe
+    mem_limit: 128m
+    restart: always
+
+  bff:
+    build:
+      context: .
+      dockerfile: ./EsiaUserBff/Dockerfile
+    mem_limit: 512m
+    restart: always
+    environment:
+      ASPNETCORE_ENVIRONMENT: Compose
+      ConnectionStrings__DefaultConnection: >
+        Host=postgres;
+        Port=5432;
+        Database=EsiaUserGenerator;
+        Username=postgres;
+        Password=mysecretpassword;
+        Pooling=true
+
+  postgres:
+    image: postgres:16-alpine
+    mem_limit: 256m
+    restart: always
+    environment:
+      POSTGRES_DB: EsiaUserGenerator
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  nginx:
+    image: nginx:alpine
+    mem_limit: 64m
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./Nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - bff
+

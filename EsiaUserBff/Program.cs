@@ -43,9 +43,9 @@ internal class Program
         builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
         builder.Services.AddScoped<IUserProgressTracker, DbUserProgressTracker>();
         //redis
-        builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
-            ConnectionMultiplexer.Connect("localhost:6379")
-        );
+        //builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+         //   ConnectionMultiplexer.Connect("localhost:6379")
+        //);
         
         builder.Services.AddSingleton<IRequestStatusStore, RedisRequestStatusStore>();
         builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
@@ -73,7 +73,8 @@ internal class Program
             app.MapControllers();
 
 
-
+            Console.WriteLine("ENV = " + builder.Environment.EnvironmentName);
+            Console.WriteLine("CS = " + builder.Configuration.GetConnectionString("DefaultConnection"));
             using (var scope = app.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
