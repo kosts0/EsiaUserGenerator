@@ -43,9 +43,9 @@ internal class Program
         builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
         builder.Services.AddScoped<IUserProgressTracker, DbUserProgressTracker>();
         //redis
-        builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
-            ConnectionMultiplexer.Connect("localhost:6379")
-        );
+        //builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+         //   ConnectionMultiplexer.Connect("localhost:6379")
+        //);
         
         builder.Services.AddSingleton<IRequestStatusStore, RedisRequestStatusStore>();
         builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
