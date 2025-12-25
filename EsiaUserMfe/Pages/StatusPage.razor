@@ -1,5 +1,7 @@
 @page "/status/{RequestId}"
+@using System.Text.Encodings.Web
 @using System.Text.Json
+@using System.Text.Unicode
 @using EsiaUserMfe.Dto
 @using EsiaUserMfe.Service.Interface
 @using MudBlazor
@@ -75,7 +77,12 @@
             await InvokeAsync(StateHasChanged);
         }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
     }
-
+    private static readonly JsonSerializerOptions PrettyJsonOptions =
+        new()
+        {
+            WriteIndented = true,
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
+        };
     private async Task LoadStatus(Guid id)
     {
         Status = await ApiClient.GetRequestStatus(id);
@@ -84,7 +91,7 @@
         {
             GeneratedJson = JsonSerializer.Serialize(
                 Status.Data.GeneratedData,
-                new JsonSerializerOptions { WriteIndented = true }
+                PrettyJsonOptions
             );
         }
 

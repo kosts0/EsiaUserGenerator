@@ -1,9 +1,21 @@
-﻿# build
+﻿# ---------- build ----------
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
-WORKDIR /app
-COPY . .
-RUN dotnet publish -c Release -o /out
+WORKDIR /src
 
-# runtime
+COPY . .
+RUN dotnet publish -c Release -o /app/publish
+
+# ---------- runtime ----------
 FROM nginx:alpine
-COPY --from=build /out/wwwroot /usr/share/nginx/html
+WORKDIR /usr/share/nginx/html
+
+# чистим дефолт
+RUN rm -rf ./*
+
+# копируем билд
+COPY --from=build /app/publish/wwwroot .
+
+# копируем nginx конфиг
+COPY nginx.conf /etc/nginx/nginx.conf
+
+EXPOSE 80
