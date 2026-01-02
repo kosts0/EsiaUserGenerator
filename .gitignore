@@ -6,4 +6,7 @@ riderModule.iml
 /bin
 /obj
 EsiaUserGEnerator.sln.DotSettings.user
-
+.idea/
+.vscode/
+/.idea
+/.vscode
