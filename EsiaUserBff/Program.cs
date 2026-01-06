@@ -17,7 +17,9 @@ internal class Program
         
 // Настройка PostgreSQL
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+            options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
+                bld => bld.EnableRetryOnFailure())
+        );
 
 // Репозитории и UnitOfWork
         
