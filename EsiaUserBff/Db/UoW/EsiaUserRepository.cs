@@ -16,5 +16,7 @@ public class EsiaUserRepository : Repository<EsiaUser>, IEsiaUserRepository
     public async Task<EsiaUser?> GetByOidAsync(string oid) =>
         await _dbSet.Include(u => u.RequestData).FirstOrDefaultAsync(x => x.Oid == oid);
 
-    public async Task<IEnumerable<EsiaUser>> GetAllLazyAsync() => await _dbSet.Include(u => u.RequestData).ToListAsync();
+    public async Task<IEnumerable<EsiaUser>> GetAllLazyAsync() => await _dbSet.Include(u => u.RequestData)
+        .AsNoTracking()
+        .ToListAsync();
 }
