@@ -1,10 +1,11 @@
 @using System.Text.Json
 @using EsiaUserMfe.Dto
 @using EsiaUserMfe.Service.Interface
+@using Microsoft.JSInterop
 @inject ISnackbar Snackbar
 @inject IApiClient ApiClient
 @inject NavigationManager NavigationManager
-
+@inject IJSRuntime JS
 @page "/"
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-6">
@@ -85,6 +86,7 @@
             }
 
             NavigationManager.NavigateTo($"/status/{data.RequestId}");
+            await JS.InvokeVoidAsync("metrikaEvent", "create_test_user");
         }
         catch (Exception ex)
         {
