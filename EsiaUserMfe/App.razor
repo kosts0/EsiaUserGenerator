@@ -1,11 +1,24 @@
 @using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.JSInterop
 @using MudBlazor
+@using NavigationContext = Microsoft.AspNetCore.Components.Routing.NavigationContext
+@inject IJSRuntime JS
+@code {
+    private async Task OnNavigate(NavigationContext context)
+    {
+        await JS.InvokeVoidAsync(
+            "metrikaHit",
+            context.Path
+        );
+    }
+}
 <MudThemeProvider />
 
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<Router AppAssembly="@typeof(App).Assembly">
+<Router AppAssembly="@typeof(App).Assembly"
+        OnNavigateAsync="OnNavigate">
     <Found Context="routeData">
         <RouteView RouteData="@routeData" />
     </Found>
