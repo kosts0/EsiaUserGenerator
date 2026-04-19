@@ -10,50 +10,53 @@
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-6">
     <MudPaper Elevation="2" Class="p-6">
-    <MudText Typo="Typo.h5" Class="mb-4">Список пользователей ESIA</MudText>
-    @if (EsiaUserList == null)
-    {
-        <MudProgressCircular Color="Color.Primary" Class="m-4" />
-    }
-    else
-    {
-        <MudTable Items="EsiaUserList?.Select((u, i) => (u, i))"
-                  Hover="true" Breakpoint="Breakpoint.Sm"
-                  Loading="_loading"
-                  LoadingProgressColor="Color.Info"
-                  Dense="false"
-                  Bordered="false"
-                  Striped="true">
-            <HeaderContent>
-                <MudTh>#</MudTh>
-                <MudTh>OID</MudTh>
-                <MudTh>Логин</MudTh>
-                <MudTh>Пароль</MudTh>
-                <MudTh>Данные профиля</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd>@context.i</MudTd>
-                <MudTd DataLabel="OID">@context.u.Oid</MudTd>
-                <MudTd DataLabel="Логин">@context.u.Login</MudTd>
-                <MudTd DataLabel="Пароль">@context.u.Password</MudTd>
-                <MudTd DataLabel="Данные профиля">
-                    @((context.u.RequestData == null ||
-                       context.u.RequestData.GetValueKind() == JsonValueKind.Null ||
-                       context.u.RequestData["generatedUserInfo"] == null ||
-                       context.u.RequestData["generatedUserInfo"]?.GetValueKind() == JsonValueKind.Null)
-                        ? "Нет информации"
-                        : @context.u.RequestData?["generatedUserInfo"].ToJsonString(new JsonSerializerOptions
-                        {
-                            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                            WriteIndented = true
-                        }))
-                </MudTd>
-            </RowTemplate>
+        <div class="d-flex justify-space-between align-center mb-4">
+            <MudText Typo="Typo.h5" Class="mb-4">Список пользователей ESIA</MudText>
+            <MudLink Href="https://esia-portal1.test.gosuslugi.ru/login">Авторизоваться<MudIcon Icon="@Icons.Material.Filled.Link" Size="Size.Small" Color="Color.Primary" Class="ml-1"/></MudLink>
+        </div>
+        @if (EsiaUserList == null)
+        {
+            <MudProgressCircular Color="Color.Primary" Class="m-4"/>
+        }
+        else
+        {
+            <MudTable Items="EsiaUserList?.Select((u, i) => (u, i))"
+                      Hover="true" Breakpoint="Breakpoint.Sm"
+                      Loading="_loading"
+                      LoadingProgressColor="Color.Info"
+                      Dense="false"
+                      Bordered="false"
+                      Striped="true">
+                <HeaderContent>
+                    <MudTh>#</MudTh>
+                    <MudTh>OID</MudTh>
+                    <MudTh>Логин</MudTh>
+                    <MudTh>Пароль</MudTh>
+                    <MudTh>Данные профиля</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.i</MudTd>
+                    <MudTd DataLabel="OID">@context.u.Oid</MudTd>
+                    <MudTd DataLabel="Логин">@context.u.Login</MudTd>
+                    <MudTd DataLabel="Пароль">@context.u.Password</MudTd>
+                    <MudTd DataLabel="Данные профиля">
+                        @((context.u.RequestData == null ||
+                           context.u.RequestData.GetValueKind() == JsonValueKind.Null ||
+                           context.u.RequestData["generatedUserInfo"] == null ||
+                           context.u.RequestData["generatedUserInfo"]?.GetValueKind() == JsonValueKind.Null)
+                            ? "Нет информации"
+                            : @context.u.RequestData?["generatedUserInfo"].ToJsonString(new JsonSerializerOptions
+                            {
+                                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                                WriteIndented = true
+                            }))
+                    </MudTd>
+                </RowTemplate>
 
-        </MudTable>
-    }
+            </MudTable>
+        }
 
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" OnClick="CreateProfile">Создать ESIA-профиль</MudButton> 
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" OnClick="CreateProfile">Создать ESIA-профиль</MudButton>
     </MudPaper>
 </MudContainer>
 @code {
